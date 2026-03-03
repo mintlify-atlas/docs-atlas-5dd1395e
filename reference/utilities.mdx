@@ -7,6 +7,75 @@ description: Utility functions for parsing config, color manipulation, and keybi
 
 Utility modules provide core functionality for config parsing, color operations, and keybind validation.
 
+## settings.ts
+
+**Location**: `src/lib/data/settings.ts`
+
+Settings schema and metadata for the Ghostty Config editor.
+
+### Exports
+
+```typescript
+export type KeybindString = `${string}=${string}`;
+
+export interface ColorScheme {
+  palette: HexColor[];
+  background?: HexColor;
+  foreground?: HexColor;
+  cursor?: HexColor;
+  selection?: HexColor;
+  // ... additional color properties
+}
+
+export const fetchColorScheme = async (theme: string): Promise<ColorScheme>
+
+export default settings; // Array of Panel objects
+```
+
+### Settings Structure
+
+The default export is an array of **Panel** objects, each containing **Groups**, which contain individual **Settings**:
+
+```typescript
+interface Panel {
+  id: string;
+  name: string;
+  groups: Group[];
+}
+
+interface Group {
+  id: string;
+  name: string;
+  settings: Array<Switch | Number | Dropdown | Color | Palette | Keybinds | Theme>;
+}
+```
+
+### Setting Types
+
+- `switch` — Boolean toggle
+- `number` — Numeric input with optional range
+- `dropdown` — Select from options
+- `text` — Text input
+- `color` — Color picker
+- `palette` — 256-color array
+- `keybinds` — Keybinding array
+- `theme` — Theme selector (special dropdown)
+
+### fetchColorScheme()
+
+Fetches color schemes from the [iTerm2-Color-Schemes](https://github.com/mbadolato/iTerm2-Color-Schemes) repository.
+
+```typescript
+const response = await fetchColorScheme("Dracula");
+// Returns: { background: "#282a36", foreground: "#f8f8f2", palette: [...], ... }
+```
+
+**Features**:
+- Loads themes from GitHub API
+- Parses iTerm2 XML format
+- Converts to Ghostty color format
+- Used by the Theme component
+
 ## parse.ts
 
 **Location**: `src/lib/utils/parse.ts`

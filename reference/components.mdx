@@ -316,6 +316,239 @@ These components provide the UI for configuring individual settings.
   </Accordion>
 </AccordionGroup>
 
+## UI Components
+
+General-purpose UI components used throughout the application.
+
+<AccordionGroup>
+  <Accordion title="Admonition">
+    **Location**: `src/lib/components/Admonition.svelte`
+
+    Callout box for important information or warnings.
+
+    ### Props
+
+    | Prop | Type | Description |
+    |------|------|-------------|
+    | `children` | `Snippet` | Admonition content |
+
+    ### Usage
+
+    ```svelte
+    <Admonition>
+      This tool will have bugs! Please report them on GitHub.
+    </Admonition>
+    ```
+
+    Displays content in a highlighted box with visual styling to draw attention.
+  </Accordion>
+
+  <Accordion title="Tab">
+    **Location**: `src/lib/components/Tab.svelte`
+
+    Tab button component for tabbed interfaces.
+
+    ### Props
+
+    | Prop | Type | Description |
+    |------|------|-------------|
+    | `selected` | `boolean` | Whether this tab is active |
+    | `onclick` | `() => void` | Click handler |
+    | `children` | `Snippet` | Tab label content |
+
+    ### Features
+    - Visual active/inactive states
+    - Keyboard accessible
+    - Smooth transitions
+  </Accordion>
+
+  <Accordion title="Tooltip">
+    **Location**: `src/lib/components/Tooltip.svelte`
+
+    Tooltip component with positioning logic.
+
+    ### Props
+
+    | Prop | Type | Description |
+    |------|------|-------------|
+    | `text` | `string` | Tooltip content |
+    | `children` | `Snippet` | Element to attach tooltip to |
+
+    ### Features
+    - Hover-triggered display
+    - Auto-positioning to avoid viewport edges
+    - Uses `tooltip` action from `src/lib/attachments/tooltip.ts`
+  </Accordion>
+
+  <Accordion title="History">
+    **Location**: `src/lib/components/History.svelte`
+
+    Navigation history controls (back/forward buttons).
+
+    ### Features
+    - Browser-style navigation
+    - Integrates with `history` store
+    - Disabled state when can't navigate
+    - Keyboard shortcuts support
+
+    ### Implementation
+
+    ```typescript
+    import {canGoBack, canGoForward, processNavigation} from "$lib/stores/history.svelte";
+    ```
+  </Accordion>
+
+  <Accordion title="User">
+    **Location**: `src/lib/components/User.svelte`
+
+    User profile display component.
+
+    ### Props
+
+    | Prop | Type | Description |
+    |------|------|-------------|
+    | `name` | `string` | User name |
+    | `avatar` | `string` | Avatar image URL |
+    | `subtext` | `string` | Optional subtitle |
+
+    ### Usage
+
+    Used on the home page to display the project author information.
+  </Accordion>
+
+  <Accordion title="Gap">
+    **Location**: `src/lib/components/Gap.svelte`
+
+    Spacer component for layout.
+
+    ### Props
+
+    | Prop | Type | Default | Description |
+    |------|------|---------|-------------|
+    | `size` | `number` | `10` | Gap size in pixels |
+
+    ### Usage
+
+    ```svelte
+    <Gap size={20} />
+    ```
+
+    Creates vertical spacing between elements.
+  </Accordion>
+</AccordionGroup>
+
+## Preview Components
+
+These components from `src/lib/views/` provide live previews of configuration changes.
+
+<AccordionGroup>
+  <Accordion title="CursorPreview">
+    **Location**: `src/lib/views/CursorPreview.svelte`
+
+    Animated cursor preview showing the current cursor style and color.
+
+    ### Features
+    - Displays animated cursor based on `config.cursorStyle`
+    - Shows cursor color from `config.cursorColor`
+    - Supports all cursor styles: `block`, `bar`, `underline`
+    - Includes blinking animation
+    - Displays sample text for context
+
+    ### Usage
+
+    Referenced in the Features documentation and visible in the Colors settings panel.
+  </Accordion>
+
+  <Accordion title="FontPreview">
+    **Location**: `src/lib/views/FontPreview.svelte`
+
+    Interactive font testing playground with sample terminal output.
+
+    ### Features
+    - Live font family preview
+    - Font size adjustment
+    - Bold and italic style toggles
+    - Sample text with code, Unicode, and box-drawing characters
+    - Does not persist changes (for testing only)
+
+    ### Sample Content
+
+    ```
+    $ echo "Testing fonts"
+    ┌─────────────────┐
+    │ Hello, World! → │
+    └─────────────────┘
+    ```
+  </Accordion>
+
+  <Accordion title="PalettePreview">
+    **Location**: `src/lib/views/PalettePreview.svelte`
+
+    Grid visualization of the 256-color terminal palette.
+
+    ### Features
+    - 8×32 color grid layout
+    - Displays all 256 palette colors
+    - Each cell shows its index number
+    - Updates in real-time as palette is modified
+    - Clickable cells to edit individual colors
+  </Accordion>
+
+  <Accordion title="BaseColorPreview">
+    **Location**: `src/lib/views/BaseColorPreview.svelte`
+
+    Preview component for base terminal colors.
+
+    ### Features
+    - Shows background, foreground, and selection colors
+    - Displays sample selected text
+    - Updates reactively with color changes
+    - Demonstrates actual text rendering
+  </Accordion>
+
+  <Accordion title="AppIconPreview">
+    **Location**: `src/lib/views/AppIconPreview.svelte`
+
+    macOS app icon customization preview (macOS-specific feature).
+
+    ### Props
+
+    | Prop | Type | Description |
+    |------|------|-------------|
+    | `config` | `Config` | Configuration object with icon settings |
+
+    ### Features
+    - Previews custom app icons with different styles
+    - Shows icon ghost color effects
+    - Displays icon frame styles
+    - macOS-only functionality
+    - Real-time preview of icon appearance
+
+    ### Supported Icon Styles
+    - Default Ghostty icon
+    - Custom icon frames (floating, decorative, etc.)
+    - Ghost color overlays
+  </Accordion>
+
+  <Accordion title="Page">
+    **Location**: `src/lib/views/Page.svelte`
+
+    Layout wrapper component for all pages.
+
+    ### Props
+
+    | Prop | Type | Description |
+    |------|------|-------------|
+    | `title` | `string` | Page title for browser tab |
+    | `children` | `Snippet` | Page content |
+
+    ### Features
+    - Sets document title
+    - Provides consistent page layout
+    - Handles navigation integration
+  </Accordion>
+</AccordionGroup>
+
 ## Component Patterns
 
 ### Bindable Props
