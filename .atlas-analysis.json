@@ -1,0 +1,79 @@
+{
+  "projectType": "frontend",
+  "projectName": "Ghostty Config",
+  "projectDescription": "A beautiful web-based configuration generator for the Ghostty terminal emulator with live previews and export functionality.",
+  "theme": "palm",
+  "primaryColor": "#03028f",
+  "lightColor": "#4c4bdb",
+  "darkColor": "#09043a",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Overview",
+        "pages": [
+          "introduction",
+          "quickstart"
+        ]
+      },
+      {
+        "group": "User Guide",
+        "pages": [
+          "guide/getting-started",
+          "guide/importing-exporting",
+          "guide/customizing-colors",
+          "guide/configuring-fonts",
+          "guide/setting-keybinds",
+          "guide/previewing-changes"
+        ]
+      },
+      {
+        "group": "Features",
+        "pages": [
+          "features/settings-editor",
+          "features/color-schemes",
+          "features/font-playground",
+          "features/keybind-builder",
+          "features/live-previews"
+        ]
+      },
+      {
+        "group": "Development",
+        "pages": [
+          "development/local-setup",
+          "development/project-structure",
+          "development/contributing"
+        ]
+      },
+      {
+        "group": "Reference",
+        "pages": [
+          "reference/components",
+          "reference/stores",
+          "reference/utilities"
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Interactive settings editor with visual controls",
+    "Real-time preview of cursors, colors, and fonts",
+    "Import and export Ghostty config files",
+    "Color scheme browser with community themes",
+    "Keybinding builder with validation",
+    "Font playground with custom font support",
+    "One-click config export to clipboard"
+  ],
+  "publicApiSurface": [
+    "config.svelte.ts - Configuration state management",
+    "parse.ts - Config file parser",
+    "settings.ts - Settings schema definitions",
+    "colors.ts - Color utilities",
+    "keybinds.ts - Keybinding validation",
+    "ColorPicker component",
+    "FontPreview component",
+    "PalettePreview component",
+    "CursorPreview component",
+    "AppIconPreview component",
+    "KeybindEditor component"
+  ]
+}
