@@ -1,0 +1,380 @@
+---
+title: Keybinding Builder
+description: Visual keybinding editor with validation, duplicate detection, and sequence support
+---
+
+The keybinding builder provides a visual interface for creating and editing Ghostty keybindings with real-time validation and error detection.
+
+## Overview
+
+Ghostty's keybinding system is powerful but complex. The keybind builder helps you:
+
+- Create keybindings without learning the syntax
+- Edit existing keybindings visually
+- Validate keybinds before saving
+- Detect duplicate keybindings
+- Build multi-step key sequences
+
+## Keybind Editor Interface
+
+The editor (components/settings/KeybindEditor.svelte:1) provides structured input for all keybind components:
+
+<CardGroup cols={2}>
+  <Card title="Prefixes" icon="flag">
+    Optional modifiers: `all`, `global`, `unconsumed`, `performable`
+  </Card>
+  <Card title="Trigger" icon="keyboard">
+    Key + modifiers (supports sequences up to 4 steps)
+  </Card>
+  <Card title="Action" icon="bolt">
+    The action to perform (200+ available actions)
+  </Card>
+  <Card title="Arguments" icon="input-text">
+    Action-specific parameters
+  </Card>
+</CardGroup>
+
+## Creating a Keybinding
+
+### Basic Keybind
+
+The simplest keybind has a key, optional modifiers, and an action:
+
+```conf
+# Format: [prefixes:][modifiers+]key=action[:argument]
+super+t=new_tab
+ctrl+shift+c=copy_to_clipboard
+```
+
+### With Prefixes
+
+Prefixes modify keybind behavior:
+
+```conf
+global:super+space=toggle_quick_terminal
+all:ctrl+c=copy_to_clipboard
+unconsumed:escape=end_search
+```
+
+- **global** - Works even when Ghostty isn't focused
+- **all** - Works in all modes (including when terminal app consumes it)
+- **unconsumed** - Only triggers if terminal app doesn't consume it
+- **performable** - Only triggers if the action is possible
+
+### Key Sequences
+
+Create multi-step keybindings (up to 4 steps):
+
+```conf
+ctrl+a>c=copy_to_clipboard
+ctrl+a>v=paste_from_clipboard
+ctrl+x>ctrl+f=search
+```
+
+<Warning>
+Global and all-mode keybindings cannot be sequences. The editor will prevent you from adding sequence steps when these prefixes are selected.
+</Warning>
+
+## Key Names
+
+The editor provides autocomplete for 178 valid key names (utils/keybinds.ts:1):
+
+### Letter Keys
+```conf
+key_a through key_z
+```
+
+### Number Keys
+```conf
+digit_0 through digit_9
+```
+
+### Modifier Keys
+```conf
+shift_left, shift_right
+control_left, control_right
+alt_left, alt_right
+meta_left, meta_right
+```
+
+### Special Keys
+```conf
+enter, escape, tab, space, backspace
+arrow_up, arrow_down, arrow_left, arrow_right
+page_up, page_down, home, end, insert, delete
+```
+
+### Function Keys
+```conf
+f1 through f25
+```
+
+### Physical Keys
+
+Bind to physical keyboard positions:
+```conf
+physical:one=goto_tab:1
+physical:two=goto_tab:2
+```
+
+### Single Characters
+
+You can use literal characters:
+```conf
++=increase_font_size:1
+-=decrease_font_size:1
+,=open_config
+```
+
+## Modifiers
+
+The editor supports four modifiers:
+
+```typescript
+const VALID_MODIFIERS = ["shift", "ctrl", "alt", "super"];
+```
+
+Modifier aliases are automatically normalized:
+- `control` → `ctrl`
+- `cmd`, `command` → `super`
+- `opt`, `option` → `alt`
+
+## Actions
+
+The editor provides dropdowns for 80+ actions with built-in validation:
+
+### No Arguments
+
+```conf
+super+n=new_window
+super+t=new_tab
+super+q=quit
+ctrl+l=clear_screen
+```
+
+### With Arguments
+
+#### Number Arguments
+```conf
+super+equal=increase_font_size:1
+super+0=set_font_size:13
+super+arrow_up=jump_to_prompt:-1
+```
+
+#### Enum Arguments
+```conf
+super+d=new_split:right
+super+shift+d=new_split:down
+super+f=search:next
+```
+
+#### Text Arguments
+```conf
+super+backspace=text:\x15
+ctrl+a=text:\x01
+```
+
+#### Resize Arguments (Special)
+```conf
+super+ctrl+arrow_up=resize_split:up,10
+super+ctrl+arrow_right=resize_split:right,20
+```
+
+### Action Validation
+
+The editor validates arguments based on action type (utils/keybinds.ts:458):
+
+```typescript
+function validateAction(action: string, args: string | undefined) {
+  const definition = ACTION_LOOKUP[action];
+  if (!definition) return [`unknown action '${action}'`];
+  
+  if (definition.type === "none" && args) {
+    return [`'${action}' does not take arguments`];
+  }
+  
+  if (definition.type === "number") {
+    if (args === undefined) return [`'${action}' requires a numeric argument`];
+    if (!Number.isNaN(Number(args))) return [];
+    return [`'${action}' expects a number, got '${args}'`];
+  }
+  
+  // ... more validation
+}
+```
+
+## Keybind List Interface
+
+The main keybind interface (components/settings/Keybinds.svelte:1) displays all keybindings with visual indicators:
+
+### Status Indicators
+
+- **Valid** - Green/normal appearance
+- **Invalid** - Red border with error indicator
+- **Duplicate** - Yellow/orange warning indicator
+
+```css
+.keybind.invalid {
+  box-shadow: inset 4px 0 0 rgba(255, 106, 106, 0.8);
+  background: rgba(255, 90, 90, 0.12);
+}
+
+.keybind.duplicate {
+  box-shadow: inset 4px 0 0 rgba(255, 196, 70, 0.7);
+  background: rgba(255, 196, 70, 0.08);
+}
+```
+
+### List Controls
+
+- **Add (+)** - Open editor in add mode
+- **Remove (−)** - Delete selected keybindings
+- **Edit (✎)** - Edit single selected keybinding
+- **Reset** - Restore default keybindings
+
+### Multi-Selection
+
+- **Click** - Select single keybinding
+- **Ctrl+Click** - Toggle selection
+- **Escape** - Clear selection
+
+## Diagnostics
+
+The keybind system provides comprehensive diagnostics (utils/keybinds.ts:554):
+
+```typescript
+export function getDiagnostics(keybinds: string[]) {
+  const entries = keybinds.map(parseKeybind);
+  const counts: Record<string, number> = {};
+  
+  entries.forEach((entry) => {
+    if (entry.trigger) {
+      const canon = canonicalTrigger(entry.trigger);
+      counts[canon] = (counts[canon] || 0) + 1;
+    }
+  });
+  
+  return entries.map((entry) => {
+    const status = entry.error && entry.error.length ? "invalid" : "ok";
+    if (entry.trigger) {
+      const canon = canonicalTrigger(entry.trigger);
+      const duplicate = counts[canon] > 1;
+      return {status, duplicate, errors: entry.error ?? [], canonical: canon};
+    }
+    return {status, duplicate: false, errors: entry.error ?? [], canonical: ""};
+  });
+}
+```
+
+This detects:
+- Invalid key names
+- Invalid modifiers
+- Invalid actions
+- Missing required arguments
+- Incorrect argument types
+- Duplicate keybindings
+
+## Keybind Parsing
+
+The parser handles complex keybind strings (utils/keybinds.ts:507):
+
+```typescript
+export function parseKeybind(value: string): ParsedKeybind {
+  const colon = value.indexOf("=");
+  if (colon === -1) return {error: ["missing '=' between trigger and action"]};
+  
+  const trigger = value.slice(0, colon).trim();
+  const actionPart = value.slice(colon + 1).trim();
+  
+  if (!trigger || !actionPart) return {error: ["trigger or action missing"]};
+  
+  const parsedTrigger = parseTrigger(trigger);
+  if (!parsedTrigger) return {error: ["invalid trigger format"]};
+  
+  const argIndex = actionPart.indexOf(":");
+  const action = argIndex === -1 ? actionPart : actionPart.slice(0, argIndex);
+  const args = argIndex === -1 ? undefined : actionPart.slice(argIndex + 1);
+  
+  // Validate...
+}
+```
+
+## Example Configurations
+
+### macOS-Style Keybinds
+
+```conf
+super+n=new_window
+super+t=new_tab
+super+w=close_surface
+super+q=quit
+super+c=copy_to_clipboard
+super+v=paste_from_clipboard
+super+equal=increase_font_size:1
+super+minus=decrease_font_size:1
+super+0=reset_font_size
+super+enter=toggle_fullscreen
+```
+
+### Vim-Style Keybinds
+
+```conf
+ctrl+a>c=copy_to_clipboard
+ctrl+a>v=paste_from_clipboard
+ctrl+a>|=new_split:right
+ctrl+a>-=new_split:down
+ctrl+a>h=goto_split:left
+ctrl+a>j=goto_split:down
+ctrl+a>k=goto_split:up
+ctrl+a>l=goto_split:right
+ctrl+a>d=close_surface
+```
+
+### tmux-Style Keybinds
+
+```conf
+ctrl+b>c=new_tab
+ctrl+b>%=new_split:right
+ctrl+b>\"|\"=new_split:down
+ctrl+b>x=close_surface
+ctrl+b>arrow_left=goto_split:left
+ctrl+b>arrow_down=goto_split:down
+ctrl+b>arrow_up=goto_split:up
+ctrl+b>arrow_right=goto_split:right
+```
+
+## Best Practices
+
+<Tip>
+**Avoid conflicts** - Don't override system keybindings unless intentional. Use prefixes like `super` (Cmd/Win) or sequences to avoid conflicts.
+</Tip>
+
+<Tip>
+**Group related actions** - Use sequences for related commands:
+```conf
+ctrl+a>h=goto_split:left
+ctrl+a>j=goto_split:down
+ctrl+a>k=goto_split:up
+ctrl+a>l=goto_split:right
+```
+</Tip>
+
+<Tip>
+**Document complex binds** - Add comments in your config:
+```conf
+# Window management
+super+d=new_split:right
+super+shift+d=new_split:down
+```
+</Tip>
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Settings Editor" href="/features/settings-editor" icon="sliders">
+    Full visual configuration interface
+  </Card>
+  <Card title="Keybind Documentation" href="https://ghostty.org/docs/config/keybind" icon="book">
+    Complete keybind reference
+  </Card>
+</CardGroup>

@@ -1,0 +1,374 @@
+---
+title: Stores
+description: Reactive state management stores for configuration, history, and app state
+---
+
+## Overview
+
+The Ghostty Config editor uses Svelte 5 runes for reactive state management across three main stores.
+
+## config.svelte.ts
+
+**Location**: `src/lib/stores/config.svelte.ts`
+
+Manages the entire Ghostty configuration state.
+
+### Exports
+
+<AccordionGroup>
+  <Accordion title="config (default export)">
+    The reactive configuration object containing all settings.
+
+    ```typescript
+    const config = $state(Object.assign({}, defaults));
+    export default config;
+    ```
+
+    ### Type Definition
+
+    ```typescript
+    interface DefaultConfig {
+      // Color settings
+      palette: HexColor[];  // 256 colors
+      background: HexColor;
+      foreground: HexColor;
+      cursorColor: HexColor;
+      selectionBackground: HexColor;
+      selectionForeground: HexColor;
+      
+      // Font settings
+      fontFamily: string;
+      fontFamilyBold: string;
+      fontFamilyItalic: string;
+      fontFamilyBoldItalic: string;
+      fontSize: number;
+      fontThicken: boolean;
+      
+      // Keybinds
+      keybind: KeybindString[];
+      
+      // Window settings
+      windowWidth: number;
+      windowHeight: number;
+      windowPaddingX: number;
+      windowPaddingY: number;
+      windowDecoration: boolean;
+      
+      // ... 100+ more settings
+    }
+    ```
+
+    ### Usage
+
+    ```typescript
+    import config from "$lib/stores/config.svelte";
+
+    // Read value
+    const bg = config.background;
+
+    // Update value
+    config.fontSize = 14;
+    ```
+  </Accordion>
+
+  <Accordion title="diff()">
+    Computes configuration changes from defaults.
+
+    ```typescript
+    export function diff(): Partial<Record<keyof DefaultConfig | string, any>>
+    ```
+
+    **Returns**: Object with only modified settings in Ghostty config format.
+
+    ### Behavior
+
+    - Converts camelCase keys to kebab-case: `fontSize` → `font-size`
+    - For arrays like `keybind`: only includes additions
+    - For `palette`: outputs `palette = N=color` format for changes
+    - Skips unchanged values
+
+    ### Example
+
+    ```typescript
+    const changes = diff();
+    // {
+    //   "font-size": 16,
+    //   "background": "#1e1e1e",
+    //   "keybind": ["ctrl+t=new_tab"],
+    //   "palette": ["0=#000000", "15=#ffffff"]
+    // }
+    ```
+  </Accordion>
+
+  <Accordion title="load()">
+    Merges partial configuration into current state.
+
+    ```typescript
+    export function load(conf: Partial<typeof config>): void
+    ```
+
+    ### Parameters
+
+    | Param | Type | Description |
+    |-------|------|-------------|
+    | `conf` | `Partial<DefaultConfig>` | Configuration object to merge |
+
+    ### Special Handling
+
+    **Keybinds**: Appends to existing keybinds
+    ```typescript
+    config.keybind = [...config.keybind, ...conf.keybind!];
+    ```
+
+    **Palette**: Merges by index, preserving unchanged colors
+    ```typescript
+    for (let p = 0; p < conf.palette!.length; p++) {
+      if (!conf.palette![p]) continue;
+      config.palette[p] = conf.palette![p];
+    }
+    ```
+
+    ### Usage
+
+    ```typescript
+    load({
+      fontSize: 14,
+      background: "#1e1e1e",
+      palette: ["", "", "#ff0000"]  // Only index 2 changes
+    });
+    ```
+  </Accordion>
+
+  <Accordion title="setColorScheme()">
+    Loads a color scheme from file.
+
+    ```typescript
+    export async function setColorScheme(name: string): Promise<void>
+    ```
+
+    ### Parameters
+
+    | Param | Type | Description |
+    |-------|------|-------------|
+    | `name` | `string` | Color scheme name (empty string resets) |
+
+    ### Process
+
+    1. Fetches color scheme file via `fetchColorScheme(name)`
+    2. Parses the config text with `parse()`
+    3. Calls `load()` to apply colors
+    4. Catches and logs any errors
+
+    ### Usage
+
+    ```typescript
+    await setColorScheme("github-dark");
+    await setColorScheme("");  // Reset to defaults
+    ```
+  </Accordion>
+
+  <Accordion title="resetColorScheme()">
+    Resets all color-related settings to defaults.
+
+    ```typescript
+    export function resetColorScheme(): void
+    ```
+
+    **Resets**:
+    - `background`
+    - `foreground`
+    - `cursorColor`
+    - `selectionBackground`
+    - `selectionForeground`
+    - `palette` (all 256 colors)
+
+    ### Implementation
+
+    ```typescript
+    const keys = [
+      "background", "foreground", "cursorColor",
+      "selectionBackground", "selectionForeground"
+    ] as Array<keyof DefaultConfig>;
+
+    for (const key of keys) {
+      config[key] = defaults[key];
+    }
+
+    for (let c = 0; c < defaults.palette.length; c++) {
+      config.palette[c] = defaults.palette[c];
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="keyToConfig()">
+    Converts camelCase to kebab-case.
+
+    ```typescript
+    export function keyToConfig(key: string): string
+    ```
+
+    ### Examples
+
+    ```typescript
+    keyToConfig("fontSize")           // "font-size"
+    keyToConfig("windowPaddingX")    // "window-padding-x"
+    keyToConfig("backgroundColor")   // "background-color"
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## history.svelte.ts
+
+**Location**: `src/lib/stores/history.svelte.ts`
+
+Manages navigation history for the settings pages.
+
+### State
+
+```typescript
+let stack: string[] = $state([window.location.pathname]);
+let index = $state(0);
+```
+
+### Exports
+
+<AccordionGroup>
+  <Accordion title="canGoBack()">
+    Checks if backward navigation is possible.
+
+    ```typescript
+    export function canGoBack(): boolean
+    ```
+
+    Returns `true` if `index > 0`.
+  </Accordion>
+
+  <Accordion title="canGoForward()">
+    Checks if forward navigation is possible.
+
+    ```typescript
+    export function canGoForward(): boolean
+    ```
+
+    Returns `true` if there are items ahead in the stack.
+  </Accordion>
+
+  <Accordion title="processNavigation()">
+    Handles SvelteKit navigation events.
+
+    ```typescript
+    export function processNavigation(navEvent: OnNavigate): void
+    ```
+
+    ### Parameters
+
+    | Param | Type | Description |
+    |-------|------|-------------|
+    | `navEvent` | `OnNavigate` | SvelteKit navigation event |
+
+    ### Behavior
+
+    **Link navigation**: Adds to stack and updates index
+    ```typescript
+    if (index === stack.length - 1) {
+      stack = [...stack, navEvent.to.url.pathname];
+    } else {
+      // Trim forward history
+      const substack = stack.slice(0, index + 1);
+      stack = [...substack, navEvent.to.url.pathname];
+    }
+    index = stack.length - 1;
+    ```
+
+    **Popstate** (back/forward buttons): Updates index
+    ```typescript
+    index += navEvent.delta;
+    // Clamps to valid range
+    if (index < 0) index = 0;
+    if (index > stack.length - 1) index = stack.length - 1;
+    ```
+
+    ### Usage
+
+    ```typescript
+    import {processNavigation} from "$lib/stores/history.svelte";
+
+    onNavigate((navigation) => {
+      processNavigation(navigation);
+    });
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## state.svelte.ts
+
+**Location**: `src/lib/stores/state.svelte.ts`
+
+Global application state.
+
+### State
+
+```typescript
+interface AppState {
+  title: string;
+}
+
+const app: AppState = $state({
+  title: "Home"
+});
+
+export default app;
+```
+
+### Usage
+
+```typescript
+import app from "$lib/stores/state.svelte";
+
+app.title = "Settings - Font";
+```
+
+## Store Patterns
+
+### Svelte 5 Runes
+
+All stores use modern Svelte 5 runes instead of writable stores:
+
+```typescript
+// Old pattern (Svelte 4)
+import {writable} from "svelte/store";
+const count = writable(0);
+
+// New pattern (Svelte 5)
+const count = $state(0);
+```
+
+### Direct Mutation
+
+No need for `.set()` or `.update()` methods:
+
+```typescript
+import config from "$lib/stores/config.svelte";
+
+// Direct mutation triggers reactivity
+config.fontSize = 16;
+config.palette[0] = "#000000";
+```
+
+### Initialization
+
+Defaults are computed from the settings schema:
+
+```typescript
+import settings from "$lib/data/settings";
+
+const defaults: DefaultConfig = {} as DefaultConfig;
+
+for (const panel of settings) {
+  for (const group of panel.groups) {
+    for (const setting of group.settings) {
+      defaults[setting.id] = setting.value;
+    }
+  }
+}
+```

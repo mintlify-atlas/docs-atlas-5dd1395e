@@ -1,80 +1,249 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get started with Ghostty Config in minutes. Learn how to customize settings, preview changes, and export your configuration.
 ---
 
-## Get started in three steps
+# Quickstart Guide
 
-Get your documentation site running locally and make your first customization.
+This guide will walk you through generating your first Ghostty configuration using Ghostty Config. You'll learn how to customize settings, preview your changes, and export your config for use with Ghostty terminal.
 
-### Step 1: Set up your local environment
+## Prerequisites
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+Before you begin, make sure you have:
 
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
-
-<CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
-</CardGroup>
+- A web browser (Chrome, Firefox, Safari, or Edge)
+- [Ghostty terminal](https://ghostty.org/) installed on your system (optional, but recommended for testing)
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  You don't need to install anything to use Ghostty Config - it runs entirely in your browser!
 </Note>
+
+## Generate Your First Config
+
+<Steps>
+  <Step title="Visit the Site">
+    Navigate to [ghostty.zerebos.com](https://ghostty.zerebos.com) in your web browser.
+    
+    You'll see the home page with information about recent changes and the project roadmap.
+  </Step>
+
+  <Step title="Explore the Settings Categories">
+    Use the sidebar navigation to browse different configuration categories:
+    
+    - **Application**: Window titles, startup commands, shell integration
+    - **Clipboard**: Copy/paste behavior and permissions
+    - **Window**: Size, decorations, padding, and visual effects
+    - **Colors**: Themes, palettes, and color customization
+    - **Fonts**: Font families, sizes, and typography settings
+    - **Keybinds**: Keyboard shortcuts and bindings
+    - **Mouse**: Mouse behavior and interactions
+    - **GTK/Linux/macOS**: Platform-specific settings
+    
+    <Tip>
+      Start with the **Colors** and **Fonts** sections for the most visible customizations!
+    </Tip>
+  </Step>
+
+  <Step title="Customize Your Settings">
+    Click on any category to start customizing. For example, let's customize colors:
+    
+    1. Navigate to **Colors** in the sidebar
+    2. Click on **Color theme** dropdown to browse community themes
+    3. Select a theme like "Dracula" or "Solarized Dark"
+    4. Watch the preview update in real-time
+    
+    ```typescript
+    // Example: The color theme setting in the source code
+    {
+      id: "theme",
+      name: "Color theme",
+      note: "Any colors selected after setting this will overwrite the theme's colors.",
+      type: "theme",
+      value: "",
+      options: [{name: "Custom", value: ""}]
+    }
+    ```
+    
+    <Note>
+      When you select a theme, any individual color changes you make afterward will override the theme's values.
+    </Note>
+  </Step>
+
+  <Step title="Preview Your Changes">
+    Ghostty Config provides real-time previews for visual settings:
+    
+    - **Cursor Preview**: See your cursor style, color, and opacity
+    - **Color Palette**: View all 256 colors in your palette
+    - **Base Colors**: Preview background, foreground, and selection colors
+    - **Font Preview**: Test different fonts and sizes
+    - **App Icon Preview**: See custom macOS app icons (macOS section)
+    
+    Try adjusting the background opacity:
+    
+    1. Go to **Window** → **Appearance**
+    2. Find **Background opacity**
+    3. Drag the slider to adjust (0.0 = transparent, 1.0 = opaque)
+    4. See the preview update instantly
+  </Step>
+
+  <Step title="Configure Keybindings (Optional)">
+    Navigate to the **Keybinds** section to customize keyboard shortcuts:
+    
+    1. Click the **+** button to add a new keybinding
+    2. Press your desired key combination
+    3. Select an action from the dropdown
+    4. The binding is validated to prevent conflicts
+    
+    Example keybinding format from the source:
+    
+    ```typescript
+    // Keybindings are stored as strings in the format "keys=action"
+    type KeybindString = `${string}=${string}`;
+    
+    // Examples from the default config:
+    "super+t=new_tab"
+    "super+w=close_surface"
+    "super+c=copy_to_clipboard"
+    "super+enter=toggle_fullscreen"
+    ```
+  </Step>
+
+  <Step title="Export Your Configuration">
+    Once you're happy with your settings, navigate to **Import & Export**:
+    
+    **Option 1: Copy to Clipboard**
+    1. Click the **Clipboard** button under Export
+    2. The button will show "Copied!" to confirm
+    3. Paste the config into your Ghostty config file
+    
+    **Option 2: Download as File**
+    1. Click the **File...** button under Export
+    2. A file named `config` will be downloaded
+    3. Move it to your Ghostty config directory
+    
+    The exported config includes a header and only the settings you changed:
+    
+    ```bash
+    # Config generated by Ghostty Config
+    
+    font-size = 14
+    background = #282c34
+    foreground = #ffffff
+    cursor-style = block
+    theme = Dracula
+    ```
+  </Step>
+
+  <Step title="Use Your Config with Ghostty">
+    Apply your exported configuration to Ghostty:
+    
+    **macOS/Linux:**
+    ```bash
+    # Create the config directory if it doesn't exist
+    mkdir -p ~/.config/ghostty
+    
+    # Paste your config into the file
+    nano ~/.config/ghostty/config
+    
+    # Or move the downloaded file
+    mv ~/Downloads/config ~/.config/ghostty/config
+    ```
+    
+    **Reload Ghostty:**
+    - Press `Cmd+Shift+,` (macOS) or `Super+Shift+Comma` (Linux)
+    - Or restart Ghostty to see your changes
+    
+    <Tip>
+      You can also use the `config-file` setting to load additional config files for different profiles!
+    </Tip>
+  </Step>
+</Steps>
+
+## Import an Existing Config
+
+If you already have a Ghostty config file, you can import it to continue editing:
+
+<Steps>
+  <Step title="Navigate to Import & Export">
+    Click on **Import & Export** in the sidebar.
+  </Step>
+
+  <Step title="Choose Import Method">
+    **From Clipboard:**
+    1. Copy your existing config file contents
+    2. Click the **Clipboard** button under Import
+    3. Your settings will be loaded automatically
+    
+    **From File:**
+    1. Click the **File...** button under Import
+    2. Select your config file from the file picker
+    3. Settings will be parsed and loaded
+    
+    The import parser supports standard Ghostty config syntax:
+    
+    ```typescript
+    // Example from parse.ts - config format parsing
+    const re = /^\s*([a-z-]+)[\s]*=\s*(.*)\s*$/;
+    
+    // Supports settings like:
+    // font-size = 14
+    // palette = 0=#1d1f21
+    // keybind = super+t=new_tab
+    ```
+  </Step>
+
+  <Step title="Review and Modify">
+    After importing, browse through the settings to verify everything loaded correctly. Make any additional changes you'd like, then export again.
+  </Step>
+</Steps>
+
+## Tips for Success
+
+<Tip>
+  **Start Simple**: Begin by customizing just colors and fonts. You can always add more advanced settings later.
+</Tip>
+
+<Tip>
+  **Use the Preview**: The config preview in the Import & Export section shows exactly what will be exported, helping you verify your changes.
+</Tip>
+
+<Tip>
+  **Experiment Safely**: Since Ghostty Config runs in your browser, you can experiment freely without affecting your actual terminal until you export and apply the config.
+</Tip>
+
+<Warning>
+  Some advanced settings (like custom shaders or font adjustments) can cause issues if misconfigured. Be careful when modifying settings marked as "Advanced" or with warning notes.
+</Warning>
+
+## What's Next?
+
+Now that you've generated your first config, explore more:
+
+<CardGroup cols={2}>
+  <Card title="Browse Color Themes" icon="palette">
+    Explore hundreds of community themes in the Colors → Color theme dropdown
+  </Card>
+  
+  <Card title="Try the Font Playground" icon="font">
+    Experiment with different fonts in the Font Playground section
+  </Card>
+  
+  <Card title="Customize Keybindings" icon="keyboard">
+    Set up your perfect keyboard shortcuts in the Keybinds section
+  </Card>
+  
+  <Card title="Platform Settings" icon="desktop">
+    Configure platform-specific options for macOS, Linux, or GTK
+  </Card>
+</CardGroup>
+
+## Need Help?
+
+<Note>
+  This tool is in active development. If you encounter bugs or have suggestions, please report them on the [GitHub issue tracker](https://github.com/zerebos/ghostty-config/issues).
+</Note>
+
+**Useful Resources:**
+- [Ghostty Official Documentation](https://ghostty.org/)
+- [Ghostty Config GitHub Repository](https://github.com/zerebos/ghostty-config)
+- [iTerm2 Color Schemes](https://github.com/mbadolato/iTerm2-Color-Schemes) (theme source)

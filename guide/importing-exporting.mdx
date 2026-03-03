@@ -1,0 +1,375 @@
+---
+title: Importing & Exporting Configs
+description: Learn how to import existing Ghostty configs and export your generated configuration
+---
+
+Ghostty Config makes it easy to work with existing configurations and export your customizations.
+
+## The Import/Export Page
+
+Access the Import & Export page from the **App** section in the navigation sidebar.
+
+### Live Preview
+
+The import/export page includes a live preview pane showing your current configuration:
+
+```typescript
+// From import-export/+page.svelte
+<div class="preview">
+  <div class="row p2"># You can preview the config here</div>
+  <div class="row">&nbsp;</div>
+
+  {#each Object.entries(diff()) as [key, value], i (i)}
+    {#if Array.isArray(value)}
+      {#each value as val, v (v)}
+      <div class="row"><span class="p4">{key}</span> = <span class="p5">{val}</span></div>
+      {/each}
+    {:else}
+      <div class="row"><span class="p4">{key}</span> = <span class="p5">{value}</span></div>
+    {/if}
+  {/each}
+</div>
+```
+
+This preview displays:
+- Configuration keys in blue
+- Values in magenta
+- Syntax-highlighted like a terminal
+- Only settings that differ from defaults
+
+## Importing Configurations
+
+<Tabs>
+  <Tab title="From Clipboard">
+    ### Import from Clipboard
+
+    <Steps>
+      <Step title="Copy your config">
+        Copy your existing Ghostty configuration to your clipboard. Your config typically lives at:
+        
+        - **macOS**: `~/.config/ghostty/config`
+        - **Linux**: `~/.config/ghostty/config`
+      </Step>
+      
+      <Step title="Click Clipboard button">
+        Click the **Clipboard** button in the Import section
+      </Step>
+      
+      <Step title="Settings applied">
+        Your configuration is parsed and applied. The button briefly shows "Pasted!" to confirm success.
+      </Step>
+    </Steps>
+
+    ```typescript
+    // The paste handler
+    function pasteConfig() {
+      if (pasteConfigText === "Pasted!") return;
+      void window.navigator.clipboard.readText().then(text => {
+        pasteConfigText = "Pasted!";
+        setTimeout(() => (pasteConfigText = "Clipboard"), 3000);
+        loadConfig(text);
+      });
+    }
+    ```
+  </Tab>
+  
+  <Tab title="From File">
+    ### Import from File
+
+    <Steps>
+      <Step title="Click File button">
+        Click the **File...** button in the Import section
+      </Step>
+      
+      <Step title="Select your config">
+        Choose your Ghostty config file from the file picker dialog
+      </Step>
+      
+      <Step title="Automatic parsing">
+        The file is read and parsed automatically, and all settings are applied to the interface
+      </Step>
+    </Steps>
+
+    ```typescript
+    // File reading implementation
+    function selectFile() {
+      const file = filePicker.files![0];
+      const reader = new FileReader();
+      reader.addEventListener("load", (event) => {
+        const loadedText = event.target?.result?.toString();
+        if (loadedText) loadConfig(loadedText);
+      });
+      reader.readAsText(file);
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Config Parsing
+
+Ghostty Config uses a custom parser to read Ghostty configuration files:
+
+```typescript
+// From parse.ts
+const re = /^\s*([a-z-]+)[\s]*=\s*(.*)\s*$/;
+
+export default function (configString: string) {
+  const lines = configString.split("\n");
+  
+  const results = {
+    palette: Array(256),
+    keybind: []
+  };
+  
+  for (const l of lines) {
+    const line = l.trim();
+    const match = re.exec(line);
+    if (!match) continue;
+    const key = match[1].trim();
+    const value = match[2].trim();
+    
+    if (key === "palette") {
+      const split = value.split("=");
+      const num = parseInt(split[0].trim());
+      const color = split[1].trim();
+      if (num < 0 || num > 255) continue;
+      results.palette[num] = color;
+    }
+    else if (key === "keybind") {
+      results.keybind.push(value);
+    }
+    else {
+      // Convert kebab-case to camelCase
+      const split = key.split("-");
+      let newKey = split[0].trim();
+      for (let s = 1; s < split.length; s++) {
+        newKey += split[s].charAt(0).toUpperCase();
+        newKey += split[s].substring(1);
+      }
+      results[newKey] = value;
+    }
+  }
+  
+  return results;
+}
+```
+
+<Note>
+  The parser handles:
+  - **Palette colors** in the format `palette = 0=#000000`
+  - **Keybindings** with multiple entries
+  - **Kebab-case** to camelCase conversion
+  - **Hex colors** with automatic `#` prefix handling
+</Note>
+
+## Exporting Configurations
+
+<Tabs>
+  <Tab title="To Clipboard">
+    ### Export to Clipboard
+
+    <Steps>
+      <Step title="Configure settings">
+        Make your desired changes in any of the settings panels
+      </Step>
+      
+      <Step title="Click Clipboard">
+        Click the **Clipboard** button in the Export section
+      </Step>
+      
+      <Step title="Paste config">
+        Your configuration is copied to the clipboard. Paste it into your Ghostty config file.
+      </Step>
+    </Steps>
+
+    The button shows "Copied!" for 3 seconds to confirm success.
+  </Tab>
+  
+  <Tab title="To File">
+    ### Export to File
+
+    <Steps>
+      <Step title="Configure settings">
+        Make your desired changes in any of the settings panels
+      </Step>
+      
+      <Step title="Click File button">
+        Click the **File...** button in the Export section
+      </Step>
+      
+      <Step title="Save config">
+        A file named `config` is automatically downloaded to your downloads folder
+      </Step>
+    </Steps>
+
+    ```typescript
+    function downloadConfig() {
+      const file = new File([stringifyConfig()], "config", {type: "text/plain"});
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(file);
+      link.href = url;
+      link.download = file.name;
+      link.style.display = "none";
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Config Stringification
+
+When exporting, Ghostty Config converts your settings back to Ghostty's config format:
+
+```typescript
+// From import-export/+page.svelte
+function stringifyConfig() {
+  const config = diff();
+  const lines = ["# Config generated by Ghostty Config\n"];
+  
+  for (const key in config) {
+    if (!Array.isArray(config[key])) {
+      lines.push(`${key} = ${config[key]}`);
+    }
+    else {
+      for (let i = 0; i < config[key].length; i++) {
+        lines.push(`${key} = ${config[key][i]}`);
+      }
+    }
+  }
+  
+  return lines.join("\n");
+}
+```
+
+This produces clean, readable output:
+
+```bash
+# Config generated by Ghostty Config
+
+theme = Nord
+font-family = JetBrains Mono
+font-size = 14
+background = #2e3440
+foreground = #d8dee9
+keybind = super+t=new_tab
+keybind = super+w=close_surface
+```
+
+<Tip>
+  Only settings that differ from Ghostty's defaults are included in the exported config. This keeps your configuration file minimal and maintainable.
+</Tip>
+
+## Using Exported Configs
+
+### On macOS
+
+```bash
+# Place your exported config at:
+~/.config/ghostty/config
+
+# Or use a custom location:
+ghostty --config=/path/to/config
+```
+
+### On Linux
+
+```bash
+# Place your exported config at:
+~/.config/ghostty/config
+
+# Or use XDG_CONFIG_HOME:
+$XDG_CONFIG_HOME/ghostty/config
+```
+
+## Error Handling
+
+If parsing fails, you'll see an alert with details:
+
+```typescript
+function loadConfig(candidate: string) {
+  let parsed;
+  try {
+    parsed = parse(candidate);
+  }
+  catch (parseError) {
+    console.error(parseError);
+    alert("Something went wrong trying to parse your config. Please open an issue on GitHub!");
+    return;
+  }
+  
+  try {
+    load(parsed);
+  }
+  catch (loadError) {
+    console.error(loadError);
+    alert("Something went wrong trying to load your parsed config. Please open an issue on GitHub!");
+    return;
+  }
+}
+```
+
+<Warning>
+  If you encounter parsing errors:
+  - Check your config file for syntax errors
+  - Ensure key-value pairs use the format `key = value`
+  - Verify palette entries follow the format `palette = 0=#000000`
+  - Report persistent issues on [GitHub](https://github.com/zerebos/ghostty-config/issues)
+</Warning>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Keep a backup">
+    Before importing or making major changes, save a copy of your working configuration.
+  </Accordion>
+  
+  <Accordion title="Test in Ghostty">
+    After exporting, test your configuration in Ghostty to ensure everything works as expected.
+  </Accordion>
+  
+  <Accordion title="Use version control">
+    Store your Ghostty config in git to track changes over time.
+  </Accordion>
+  
+  <Accordion title="Document custom settings">
+    Add comments to your exported config explaining unusual or complex settings.
+  </Accordion>
+</AccordionGroup>
+
+## Common Import Formats
+
+Ghostty Config handles several config patterns:
+
+<Tabs>
+  <Tab title="Basic Settings">
+    ```bash
+    # Simple key-value pairs
+    font-family = Iosevka
+    font-size = 14
+    background = #282c34
+    foreground = #ffffff
+    ```
+  </Tab>
+  
+  <Tab title="Palette Colors">
+    ```bash
+    # Palette entries (0-255)
+    palette = 0=#1d1f21
+    palette = 1=#cc6666
+    palette = 2=#b5bd68
+    palette = 15=#eaeaea
+    ```
+  </Tab>
+  
+  <Tab title="Keybindings">
+    ```bash
+    # Multiple keybind entries
+    keybind = super+t=new_tab
+    keybind = super+w=close_surface
+    keybind = super+enter=toggle_fullscreen
+    ```
+  </Tab>
+</Tabs>

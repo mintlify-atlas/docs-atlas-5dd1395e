@@ -1,0 +1,256 @@
+---
+title: Font Playground
+description: Interactive font preview with live testing of locally installed fonts, styles, and sizing
+---
+
+The font playground provides an interactive environment to test how your locally installed fonts will look in Ghostty before committing to configuration changes.
+
+## Overview
+
+The font playground is a **non-persistent testing environment** - changes here do not affect your actual settings. It's designed for experimentation with fonts installed on your system.
+
+<Note>
+The font playground does not set any actual settings. It's purely for preview purposes.
+</Note>
+
+## Features
+
+The playground provides controls to test:
+
+<CardGroup cols={2}>
+  <Card title="Font Family" icon="font">
+    Type any font name installed on your system
+  </Card>
+  <Card title="Font Size" icon="text-size">
+    Adjust from 4px to 60px with a slider
+  </Card>
+  <Card title="Bold" icon="bold">
+    Toggle bold weight (font-weight: 700)
+  </Card>
+  <Card title="Italic" icon="italic">
+    Toggle italic style
+  </Card>
+</CardGroup>
+
+## Implementation
+
+The font playground (views/FontPreview.svelte:1) uses reactive Svelte state to apply CSS styles dynamically:
+
+```typescript
+let fontFamily = $state("monospace");
+let fontSize = $state(13);
+let bold = $state(false);
+let italic = $state(false);
+```
+
+The preview applies these styles directly:
+
+```html
+<div class="preview" 
+  style="font-family: {fontFamily}; 
+         font-size: {fontSize + 'px'}; 
+         font-style: {italic ? 'italic' : 'normal'}; 
+         font-weight: {bold ? 700 : 400};">
+  <!-- Preview content -->
+</div>
+```
+
+## Preview Content
+
+The playground displays a sample terminal output showing:
+
+```conf
+john@doe-pc$ ls
+-rwxr-xr-x 1 root Documents
+-rwxr-xr-x 1 root Downloads
+-rwxr-xr-x 1 root Pictures
+-rwxr-xr-x 1 root Music
+-rwxr-xr-x 1 root 実行可能ファイル
+-rwxr-xr-x 1 root sym -> link
+Icons:     Powerline
+```
+
+This sample includes:
+- **Command prompt** with colors
+- **File listings** with different color highlights
+- **Unicode characters** (Japanese text: 実行可能ファイル)
+- **Symbolic links** with arrows
+- **Powerline icons** for font ligature testing
+
+## Testing Different Font Types
+
+### Monospace Fonts
+
+Ideal for terminal use, these fonts have fixed character widths:
+
+```conf
+font-family = JetBrains Mono
+font-family = Fira Code
+font-family = Cascadia Code
+font-family = Hack
+font-family = Source Code Pro
+font-family = IBM Plex Mono
+```
+
+### Fonts with Ligatures
+
+Test programming ligatures for `=>`, `!=`, `>=`, etc.:
+
+```conf
+font-family = Fira Code
+font-family = JetBrains Mono
+font-family = Cascadia Code
+font-family = Victor Mono
+```
+
+<Tip>
+To enable ligatures in Ghostty, use the `font-feature` setting:
+```conf
+font-feature = +calt
+font-feature = +liga
+```
+</Tip>
+
+### Nerd Fonts
+
+Test icon rendering with Nerd Font variants:
+
+```conf
+font-family = JetBrainsMono Nerd Font
+font-family = FiraCode Nerd Font
+font-family = Hack Nerd Font
+```
+
+The preview includes Powerline icons () to verify Nerd Font rendering.
+
+## Browser Limitations
+
+<Warning>
+Due to browser security restrictions, you must **manually type** the font name. The playground cannot enumerate fonts installed on your system.
+</Warning>
+
+The font family input accepts:
+- Single font names: `JetBrains Mono`
+- Font stacks: `JetBrains Mono, Fira Code, monospace`
+- Generic families: `monospace`, `sans-serif`, `serif`
+
+If a font isn't found, the browser falls back to the default monospace font.
+
+## Comparing with Actual Settings
+
+The playground uses your current color scheme from the settings editor, so you can see how fonts look with your chosen colors:
+
+```css
+.preview {
+  background: var(--config-bg);
+  color: var(--config-fg);
+  /* Applies colors from settings */
+}
+```
+
+Color palette variables are also available:
+- `var(--config-palette-0)` through `var(--config-palette-15)`
+
+## Font Settings in Ghostty
+
+Once you've found a font you like, configure it in Ghostty:
+
+### Basic Font Configuration
+
+```conf
+font-family = JetBrains Mono
+font-size = 14
+```
+
+### Font Styles
+
+Ghostty supports separate fonts for different styles:
+
+```conf
+font-family = JetBrains Mono
+font-family-bold = JetBrains Mono Bold
+font-family-italic = JetBrains Mono Italic
+font-family-bold-italic = JetBrains Mono Bold Italic
+```
+
+### Font Style Names
+
+Some fonts require explicit style names:
+
+```conf
+font-family = Iosevka
+font-style = Regular
+font-style-bold = Heavy
+font-style-italic = Oblique
+font-style-bold-italic = Heavy Oblique
+```
+
+### Advanced Font Settings
+
+The playground doesn't expose these, but Ghostty supports:
+
+- **Font variations** - Variable font axes (wght, slnt, etc.)
+- **Font features** - OpenType features like ligatures, alternates
+- **Font thickening** - Increase stroke weight (macOS only)
+- **Cell adjustments** - Fine-tune character spacing and alignment
+
+```conf
+# Variable font weight
+font-variation = wght=450
+font-variation-bold = wght=700
+
+# Ligatures
+font-feature = +calt
+font-feature = +liga
+
+# Thickening (macOS)
+font-thicken = true
+font-thicken-strength = 255
+```
+
+## Testing Checklist
+
+When testing fonts, verify:
+
+- [ ] **Character width** - All characters should be monospace
+- [ ] **Line height** - Lines should be evenly spaced
+- [ ] **Bold rendering** - Bold text should be readable
+- [ ] **Italic rendering** - Italics should be clear
+- [ ] **Unicode support** - Non-Latin characters render correctly
+- [ ] **Icon support** - Powerline/Nerd Font icons display
+- [ ] **Ligature support** - If desired, ligatures render
+- [ ] **Color contrast** - Text is readable with your color scheme
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Settings Editor" href="/features/settings-editor" icon="sliders">
+    Configure actual font settings
+  </Card>
+  <Card title="Live Previews" href="/features/live-previews" icon="eye">
+    See font changes in real-time
+  </Card>
+</CardGroup>
+
+## Recommended Fonts
+
+### For Programming
+- **JetBrains Mono** - Excellent ligatures, great readability
+- **Fira Code** - Popular ligature font
+- **Cascadia Code** - Microsoft's developer font
+
+### For Readability
+- **Berkeley Mono** - Humanist design, easy on eyes
+- **IBM Plex Mono** - Clean, professional
+- **Source Code Pro** - Adobe's open-source font
+
+### For Compactness
+- **Iosevka** - Narrow, space-efficient
+- **SF Mono** - Apple's system font (macOS)
+- **Menlo** - Default terminal font (macOS)
+
+## External Resources
+
+- [Nerd Fonts](https://www.nerdfonts.com/) - Patched fonts with icons
+- [Programmings Fonts](https://www.programmingfonts.org/) - Test fonts in browser
+- [Ghostty Font Docs](https://ghostty.org/docs/config/reference#fonts)

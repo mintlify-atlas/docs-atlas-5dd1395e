@@ -1,0 +1,153 @@
+---
+title: Getting Started
+description: Learn how to access and navigate the Ghostty Config web interface
+---
+
+Ghosty Config is a web-based configuration tool that helps you build and customize your Ghostty terminal configuration through an intuitive interface.
+
+## Accessing the Interface
+
+The live Ghostty Config tool is available at [ghostty.zerebos.com](https://ghostty.zerebos.com).
+
+No installation is required - simply open the URL in your web browser and start configuring your terminal.
+
+## Interface Overview
+
+The interface is organized into several key sections accessible from the navigation sidebar:
+
+### Settings Categories
+
+Ghostty Config organizes settings into logical panels:
+
+- **Application** - General app behavior, startup/shutdown options, shell integration
+- **Clipboard** - Clipboard permissions and paste protection
+- **Window** - Window appearance, padding, sizing, and decorations
+- **Colors** - Color themes, palettes, and cursor colors
+- **Fonts** - Font families, sizes, and advanced typography settings
+- **Keybinds** - Keyboard shortcuts and custom keybindings
+- **Mouse** - Mouse behavior and scroll settings
+- **GTK** - GTK-specific settings (Linux)
+- **Linux** - Linux-specific settings
+- **macOS** - macOS-specific settings including app icon customization
+
+### Navigation Structure
+
+Each settings category contains multiple groups of related settings:
+
+```typescript
+// Example from settings.ts
+{
+  id: "colors",
+  name: "Colors",
+  groups: [
+    {
+      id: "general",
+      name: "",
+      settings: [...]
+    },
+    {
+      id: "base",
+      name: "Base Colors",
+      settings: [...]
+    }
+  ]
+}
+```
+
+## Key Features
+
+<Steps>
+  <Step title="Live Preview">
+    Many settings include real-time previews showing exactly how your changes will look in Ghostty.
+  </Step>
+  
+  <Step title="Import/Export">
+    Easily import existing Ghostty configs or export your generated configuration.
+  </Step>
+  
+  <Step title="Visual Builders">
+    Use specialized builders for keybindings, color palettes, and fonts.
+  </Step>
+  
+  <Step title="Config Diffing">
+    The tool only exports settings that differ from Ghostty's defaults, keeping your config file clean.
+  </Step>
+</Steps>
+
+## Understanding the Config Store
+
+Ghostty Config uses a reactive store to manage your configuration state:
+
+```typescript
+// From config.svelte.ts
+const config = $state(Object.assign({}, defaults));
+
+// The diff() function only exports changed settings
+export function diff() {
+  const output = {};
+  
+  for (const k in config) {
+    const key = k as keyof DefaultConfig;
+    if (Array.isArray(config[key]) && key === "keybind") {
+      const toAdd = config[key].filter(c => !defaults[key].includes(c));
+      if (toAdd.length) output[keyToConfig(key)] = toAdd;
+    }
+    else if (config[key] != defaults[key]) {
+      output[keyToConfig(key)] = config[key];
+    }
+  }
+  
+  return output;
+}
+```
+
+<Note>
+  Only settings that differ from defaults are included in your exported config. This keeps your configuration file minimal and easy to maintain.
+</Note>
+
+## Navigating Settings
+
+### Using the Sidebar
+
+Click any category in the left sidebar to view its settings:
+
+1. **Categories** are listed in the navigation panel
+2. **Groups** appear as sections within each category page
+3. **Settings** are individual controls within each group
+
+### Setting Types
+
+Ghostty Config includes several control types:
+
+- **Switch** - Boolean on/off toggles
+- **Text** - Text input fields
+- **Number** - Numeric inputs with optional ranges
+- **Dropdown** - Select from predefined options
+- **Color** - Color picker for hex colors
+- **Palette** - Grid of 256 color slots
+- **Keybinds** - Specialized keybinding editor
+- **Theme** - Color scheme selector with preview
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Import/Export" icon="arrow-right-arrow-left" href="/guide/importing-exporting">
+    Learn how to import existing configs and export your settings
+  </Card>
+  
+  <Card title="Customize Colors" icon="palette" href="/guide/customizing-colors">
+    Explore color themes and palette customization
+  </Card>
+  
+  <Card title="Configure Fonts" icon="font" href="/guide/configuring-fonts">
+    Use the font playground to test fonts
+  </Card>
+  
+  <Card title="Set Keybinds" icon="keyboard" href="/guide/setting-keybinds">
+    Build custom keybindings with the visual editor
+  </Card>
+</CardGroup>
+
+<Tip>
+  New to Ghostty? Start by selecting a color theme from the **Colors** section, then explore the Font Playground to find your preferred font.
+</Tip>

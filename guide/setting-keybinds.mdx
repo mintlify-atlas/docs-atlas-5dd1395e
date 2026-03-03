@@ -1,0 +1,609 @@
+---
+title: Setting Keybinds
+description: Learn how to set up and customize keybindings using the visual builder in Ghostty Config
+---
+
+Ghostty Config includes a powerful keybinding editor with sequence support, validation, and a visual builder for creating custom keyboard shortcuts.
+
+## Accessing Keybinds
+
+Access keybinding settings from the **Keybinds** category in the navigation sidebar.
+
+<Note>
+  For detailed information on Ghostty's keybinding format and available actions, refer to [Ghostty's keybind documentation](https://ghostty.org/docs/config/keybind).
+</Note>
+
+## The Keybind Editor
+
+The keybind editor displays all your keybindings in a list with visual validation:
+
+```typescript
+// From Keybinds.svelte
+<div class="item-list">
+  {#each value as _, i (i)}
+    <div
+      class="keybind"
+      class:selected={selected.includes(i)}
+      class:invalid={diagnostics[i]?.status === "invalid"}
+      class:duplicate={diagnostics[i]?.duplicate}
+    >
+      <Text value={value[i].split("=")[0]} blank={true} align="left" change={update(i)} />
+      <Text value={value[i].split("=")[1]} blank={true} change={update(i, true)} />
+    </div>
+  {/each}
+</div>
+```
+
+### Visual Indicators
+
+Keybindings are color-coded based on their status:
+
+- **Normal**: Standard display
+- **Selected**: Blue highlight when clicked
+- **Duplicate**: Orange indicator for duplicate key combinations
+- **Invalid**: Red indicator for invalid syntax
+
+```css
+.keybind.selected {
+  background: #2457c9;
+}
+
+.keybind.duplicate {
+  box-shadow: inset 4px 0 0 rgba(255, 196, 70, 0.7);
+  background: rgba(255, 196, 70, 0.08);
+}
+
+.keybind.invalid {
+  box-shadow: inset 4px 0 0 rgba(255, 106, 106, 0.8);
+  background: rgba(255, 90, 90, 0.12);
+}
+```
+
+## Keybind Format
+
+Ghostty keybindings follow the format:
+
+```bash
+keybind = modifier+key=action:argument
+```
+
+### Components
+
+<Tabs>
+  <Tab title="Modifiers">
+    Available modifiers:
+    
+    - `super` - Cmd (macOS) or Windows key (Linux/Windows)
+    - `ctrl` - Control key
+    - `alt` - Alt/Option key
+    - `shift` - Shift key
+    
+    Combine multiple modifiers with `+`:
+    
+    ```bash
+    super+ctrl+t=new_tab
+    super+shift+enter=toggle_fullscreen
+    ```
+  </Tab>
+  
+  <Tab title="Keys">
+    Common key names:
+    
+    - Letters: `a-z`
+    - Numbers: `0-9`, `one-nine` (physical keys)
+    - Function: `f1-f24`
+    - Navigation: `arrow_up`, `arrow_down`, `page_up`, `page_down`
+    - Special: `enter`, `tab`, `space`, `backspace`, `escape`
+    - Symbols: `comma`, `period`, `bracket_left`, `equal`
+    
+    Use `physical:` prefix for physical key positions:
+    
+    ```bash
+    super+physical:one=goto_tab:1
+    ```
+  </Tab>
+  
+  <Tab title="Actions">
+    Common actions:
+    
+    - `new_tab` - Create new tab
+    - `close_surface` - Close current pane
+    - `new_split:right` - Split right
+    - `goto_tab:N` - Switch to tab N
+    - `scroll_page_up` - Scroll up one page
+    - `toggle_fullscreen` - Toggle fullscreen
+    - `text:\x01` - Send literal text
+    
+    See [Ghostty's action reference](https://ghostty.org/docs/config/keybind) for all actions.
+  </Tab>
+</Tabs>
+
+## Adding Keybindings
+
+<Steps>
+  <Step title="Click the + button">
+    Click the **+** button in the bottom toolbar to open the keybind editor
+  </Step>
+  
+  <Step title="Build your keybind">
+    Use the visual builder to construct your keybinding:
+    - Select modifiers (Cmd, Ctrl, Alt, Shift)
+    - Choose a key
+    - Pick an action
+    - Add arguments if needed
+  </Step>
+  
+  <Step title="Save">
+    Click **Save** to add the keybinding to your list
+  </Step>
+</Steps>
+
+```typescript
+// From Keybinds.svelte
+function addNew() {
+  editorMode = "add";
+  editorValue = "";
+  showEditor = true;
+}
+
+function handleSave(detail: string) {
+  if (editorMode === "add") {
+    value = [...value, detail];
+    
+    // Scroll to the new item
+    setTimeout(() => {
+      if (scroller) scroller.scrollTop = scroller.scrollHeight;
+    }, 1);
+  }
+  showEditor = false;
+}
+```
+
+## Editing Keybindings
+
+<Steps>
+  <Step title="Select a keybind">
+    Click a keybinding in the list to select it
+  </Step>
+  
+  <Step title="Click edit button">
+    Click the **edit** button (pencil icon) in the toolbar
+  </Step>
+  
+  <Step title="Modify in editor">
+    Make your changes in the visual editor
+  </Step>
+  
+  <Step title="Save changes">
+    Click **Save** to apply your changes
+  </Step>
+</Steps>
+
+```typescript
+// From Keybinds.svelte
+function editSelected() {
+  if (selected.length !== 1) return;
+  editorMode = "edit";
+  editorValue = value[selected[0]];
+  showEditor = true;
+}
+```
+
+<Note>
+  You can also edit keybindings inline by clicking directly on the key combination or action text.
+</Note>
+
+## Removing Keybindings
+
+<Steps>
+  <Step title="Select keybind(s)">
+    Click one or more keybindings to select them. Hold Ctrl/Cmd to select multiple.
+  </Step>
+  
+  <Step title="Click remove button">
+    Click the **−** button in the toolbar
+  </Step>
+  
+  <Step title="Keybinds removed">
+    Selected keybindings are removed from the list
+  </Step>
+</Steps>
+
+```typescript
+// From Keybinds.svelte
+function remove() {
+  value = value.filter((v, i) => {
+    const shouldRemove = selected.includes(i);
+    return !shouldRemove;
+  });
+  selected = [];
+}
+```
+
+## Multi-Selection
+
+Select multiple keybindings to batch delete:
+
+```typescript
+// From Keybinds.svelte
+function select(index: number) {
+  return (event: MouseEvent | KeyboardEvent) => {
+    if (!event.ctrlKey) return (selected = [index]);
+    if (!selected.includes(index)) return selected.push(index);
+    selected.splice(selected.indexOf(index), 1);
+  };
+}
+```
+
+- **Click**: Select single keybinding
+- **Ctrl+Click**: Toggle selection (add/remove from selection)
+- **Escape**: Clear selection
+
+## Keybind Validation
+
+The editor validates keybindings in real-time:
+
+```typescript
+// From Keybinds.svelte
+const diagnostics = $derived.by(() => getDiagnostics(value));
+```
+
+### Validation Checks
+
+<AccordionGroup>
+  <Accordion title="Duplicate detection">
+    The editor warns when multiple keybindings use the same key combination:
+    
+    ```typescript
+    // From keybinds.ts (conceptual)
+    function getDiagnostics(keybinds) {
+      const seen = {};
+      return keybinds.map(kb => {
+        const [key, action] = kb.split("=");
+        if (seen[key]) {
+          return { duplicate: true };
+        }
+        seen[key] = true;
+        return {};
+      });
+    }
+    ```
+    
+    Duplicates show an orange indicator.
+  </Accordion>
+  
+  <Accordion title="Syntax validation">
+    Invalid keybind syntax is flagged with a red indicator.
+    
+    Common issues:
+    - Missing `=` separator
+    - Invalid modifier names
+    - Unknown key names
+    - Malformed action syntax
+  </Accordion>
+</AccordionGroup>
+
+## Default Keybindings
+
+Ghostty Config includes Ghostty's default keybindings:
+
+```typescript
+// From settings.ts (excerpt)
+{
+  id: "keybind", 
+  name: "", 
+  type: "keybinds", 
+  value: [
+    "super+t=new_tab",
+    "super+w=close_surface",
+    "super+enter=toggle_fullscreen",
+    "super+d=new_split:right",
+    "super+shift+bracket_left=previous_tab",
+    "super+shift+bracket_right=next_tab",
+    "super+c=copy_to_clipboard",
+    "super+v=paste_from_clipboard",
+    "super+equal=increase_font_size:1",
+    "super+minus=decrease_font_size:1",
+    // ... many more
+  ]
+}
+```
+
+### Resetting to Defaults
+
+<Steps>
+  <Step title="Click reset button">
+    Click the **reset** button (circular arrow icon) in the toolbar
+  </Step>
+  
+  <Step title="Confirm reset">
+    A confirmation dialog appears asking "Are you sure?"
+  </Step>
+  
+  <Step title="Confirm">
+    Click **Reset Keybinds** to restore all default keybindings
+  </Step>
+</Steps>
+
+```typescript
+// From Keybinds.svelte
+const defaultKeybinds = (() => {
+  const panel = settings.find((entry) => entry.id === "keybinds");
+  const group = panel?.groups.find((entry) => entry.id === "keybinds");
+  const setting = group?.settings.find((entry) => entry.type === "keybinds");
+  return (setting?.value as string[]) ?? [];
+})();
+
+function resetDefaults() {
+  value = [...defaultKeybinds];
+  selected = [];
+  showReset = false;
+  if (scroller) scroller.scrollTop = 0;
+}
+```
+
+<Warning>
+  Resetting keybindings will overwrite all your custom keybindings. There is no undo.
+</Warning>
+
+## Common Keybinding Examples
+
+<Tabs>
+  <Tab title="Tab Management">
+    ```bash
+    # Create new tab
+    keybind = super+t=new_tab
+    
+    # Close current tab/pane
+    keybind = super+w=close_surface
+    
+    # Navigate tabs
+    keybind = super+shift+bracket_left=previous_tab
+    keybind = super+shift+bracket_right=next_tab
+    
+    # Go to specific tab
+    keybind = super+physical:one=goto_tab:1
+    keybind = super+physical:two=goto_tab:2
+    ```
+  </Tab>
+  
+  <Tab title="Split Management">
+    ```bash
+    # Create splits
+    keybind = super+d=new_split:right
+    keybind = super+shift+d=new_split:down
+    
+    # Navigate splits
+    keybind = super+alt+arrow_left=goto_split:left
+    keybind = super+alt+arrow_right=goto_split:right
+    keybind = super+alt+arrow_up=goto_split:up
+    keybind = super+alt+arrow_down=goto_split:down
+    
+    # Resize splits
+    keybind = super+ctrl+arrow_left=resize_split:left,10
+    keybind = super+ctrl+arrow_right=resize_split:right,10
+    
+    # Zoom split
+    keybind = super+shift+enter=toggle_split_zoom
+    ```
+  </Tab>
+  
+  <Tab title="Clipboard">
+    ```bash
+    # Copy and paste
+    keybind = super+c=copy_to_clipboard
+    keybind = super+v=paste_from_clipboard
+    
+    # Select all
+    keybind = super+a=select_all
+    
+    # Paste from selection (Linux)
+    keybind = super+shift+v=paste_from_selection
+    ```
+  </Tab>
+  
+  <Tab title="Font Size">
+    ```bash
+    # Increase/decrease font size
+    keybind = super+equal=increase_font_size:1
+    keybind = super+minus=decrease_font_size:1
+    keybind = super++=increase_font_size:1
+    
+    # Reset font size
+    keybind = super+zero=reset_font_size
+    ```
+  </Tab>
+  
+  <Tab title="Scrolling">
+    ```bash
+    # Page scrolling
+    keybind = super+page_up=scroll_page_up
+    keybind = super+page_down=scroll_page_down
+    
+    # Jump to prompt
+    keybind = super+arrow_up=jump_to_prompt:-1
+    keybind = super+arrow_down=jump_to_prompt:1
+    
+    # Scroll to top/bottom
+    keybind = super+home=scroll_to_top
+    keybind = super+end=scroll_to_bottom
+    ```
+  </Tab>
+  
+  <Tab title="Window">
+    ```bash
+    # New window
+    keybind = super+n=new_window
+    
+    # Fullscreen
+    keybind = super+enter=toggle_fullscreen
+    keybind = super+ctrl+f=toggle_fullscreen
+    
+    # Quit
+    keybind = super+q=quit
+    ```
+  </Tab>
+  
+  <Tab title="Text Navigation">
+    ```bash
+    # Move cursor (macOS-style)
+    keybind = super+arrow_left=text:\\x01
+    keybind = super+arrow_right=text:\\x05
+    
+    # Word navigation
+    keybind = alt+arrow_left=esc:b
+    keybind = alt+arrow_right=esc:f
+    
+    # Delete line
+    keybind = super+backspace=text:\\x15
+    ```
+  </Tab>
+</Tabs>
+
+## Special Key Sequences
+
+Ghostty supports advanced key sequences:
+
+### Text Input
+
+Send literal text or control codes:
+
+```bash
+# Send Ctrl+A (start of line)
+keybind = super+arrow_left=text:\x01
+
+# Send Ctrl+E (end of line)
+keybind = super+arrow_right=text:\x05
+
+# Send Ctrl+U (delete line)
+keybind = super+backspace=text:\x15
+```
+
+### Escape Sequences
+
+Send escape sequences:
+
+```bash
+# Alt+Left (word back)
+keybind = alt+arrow_left=esc:b
+
+# Alt+Right (word forward)
+keybind = alt+arrow_right=esc:f
+```
+
+## Physical Keys
+
+Use `physical:` prefix for layout-independent bindings:
+
+```bash
+# Always use physical key positions regardless of layout
+keybind = super+physical:one=goto_tab:1
+keybind = super+physical:two=goto_tab:2
+```
+
+<Tip>
+  Physical keys are useful for:
+  - Tab switching (always in same position)
+  - Gaming-style bindings
+  - Consistent bindings across keyboard layouts
+</Tip>
+
+## Exporting Keybindings
+
+Keybindings are exported with only custom bindings:
+
+```typescript
+// From config.svelte.ts - diff() function
+if (Array.isArray(config[key]) && key === "keybind") {
+  const toAdd = config[key].filter(c => !defaults[key].includes(c));
+  if (toAdd.length) output[keyToConfig(key)] = toAdd;
+}
+```
+
+Example exported output:
+
+```bash
+# Only custom keybindings are exported
+keybind = super+shift+t=new_tab
+keybind = ctrl+tab=next_tab
+keybind = ctrl+shift+tab=previous_tab
+```
+
+<Note>
+  Only keybindings that differ from Ghostty's defaults are exported. This keeps your config file clean and portable across Ghostty updates.
+</Note>
+
+## Keyboard Shortcuts in the Editor
+
+<CardGroup cols={2}>
+  <Card title="Escape" icon="keyboard">
+    Clear selection when viewing the keybind list
+  </Card>
+  
+  <Card title="Ctrl+Click" icon="mouse">
+    Toggle selection (add/remove from selection)
+  </Card>
+  
+  <Card title="Click" icon="mouse">
+    Select single keybinding
+  </Card>
+  
+  <Card title="Inline Edit" icon="pen">
+    Click key or action text to edit directly
+  </Card>
+</CardGroup>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Avoid conflicts">
+    Be careful not to override important system or application shortcuts. The duplicate indicator helps identify conflicting bindings.
+  </Accordion>
+  
+  <Accordion title="Use consistent modifiers">
+    Stick to a consistent modifier pattern (e.g., always use `super` for window management) to build muscle memory.
+  </Accordion>
+  
+  <Accordion title="Document complex bindings">
+    Use comments in your exported config to explain non-obvious keybindings.
+  </Accordion>
+  
+  <Accordion title="Test thoroughly">
+    Test new keybindings in Ghostty before committing to them. Some combinations may conflict with shell or application shortcuts.
+  </Accordion>
+  
+  <Accordion title="Start minimal">
+    Begin with a few essential custom bindings rather than customizing everything at once.
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<Tabs>
+  <Tab title="Keybind not working">
+    If a keybinding isn't working:
+    
+    1. Check for duplicate bindings in the list
+    2. Verify the syntax is valid (no red indicator)
+    3. Ensure the key name is correct
+    4. Test if the key combination conflicts with OS shortcuts
+    5. Check Ghostty's logs for errors
+  </Tab>
+  
+  <Tab title="Invalid syntax error">
+    Common syntax issues:
+    
+    - Missing `=` between key and action
+    - Typo in modifier name (use `super`, not `cmd`)
+    - Incorrect key name (use `arrow_up`, not `up`)
+    - Missing action argument (e.g., `goto_tab:1`)
+  </Tab>
+  
+  <Tab title="Duplicate warning">
+    If you see a duplicate warning:
+    
+    - You have multiple bindings for the same key combination
+    - Only the last binding will take effect
+    - Remove or modify duplicates to resolve
+  </Tab>
+</Tabs>

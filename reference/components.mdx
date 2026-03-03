@@ -1,0 +1,347 @@
+---
+title: Components
+description: Core Svelte components used in the Ghostty Config editor interface
+---
+
+## Overview
+
+The Ghostty Config editor is built with Svelte components organized into setting controls, UI elements, and specialized editors.
+
+## Setting Components
+
+These components provide the UI for configuring individual settings.
+
+<AccordionGroup>
+  <Accordion title="Color">
+    **Location**: `src/lib/components/settings/Color.svelte`
+
+    A color input component with an interactive color picker popout.
+
+    ### Props
+
+    | Prop | Type | Default | Description |
+    |------|------|---------|-------------|
+    | `value` | `HexColor` (bindable) | - | The current color value |
+    | `size` | `number` | `20` | Size of the color display in pixels |
+    | `label` | `string` | `""` | Optional label to display on the color |
+    | `defaultValue` | `HexColor` | - | Default value for reset functionality |
+
+    ### Usage
+
+    ```svelte
+    <Color bind:value={config.background} defaultValue="#000000" size={40} />
+    ```
+
+    **Features**:
+    - Click to open ColorPicker modal
+    - Right-click to reset to default value
+    - Dynamic border color based on luminosity
+    - Escape key closes the picker
+  </Accordion>
+
+  <Accordion title="ColorPicker">
+    **Location**: `src/lib/components/ColorPicker.svelte`
+
+    Interactive HSV color picker with hex/RGB display.
+
+    ### Props
+
+    | Prop | Type | Default | Description |
+    |------|------|---------|-------------|
+    | `value` | `HexColor \| ""` (bindable) | - | The current color value |
+    | `defaultValue` | `HexColor` | `"#408080"` | Default color when value is empty |
+
+    ### Implementation Details
+
+    ```typescript
+    // Color space state management
+    let {hue, saturation, value: brightness} = $state(rgbToHsv(...hexToRgb(value || defaultValue)));
+    const [red, green, blue] = $derived.by(() => hsvToRgb(hue, saturation, brightness));
+    ```
+
+    **Features**:
+    - 2D saturation/brightness gradient selector
+    - Horizontal hue slider
+    - Live hex input with validation
+    - RGB value display
+    - Empty state visualization (red X)
+  </Accordion>
+
+  <Accordion title="Palette">
+    **Location**: `src/lib/components/settings/Palette.svelte`
+
+    Grid display for terminal color palette (256 colors).
+
+    ### Props
+
+    | Prop | Type | Description |
+    |------|------|-------------|
+    | `value` | `HexColor[]` (bindable) | Array of 256 palette colors |
+    | `defaultValue` | `HexColor[]` | Default palette for reset |
+
+    ### Usage
+
+    ```svelte
+    <Palette bind:value={config.palette} defaultValue={defaults.palette} />
+    ```
+
+    Displays an 8×32 grid where each color shows its index (1-256).
+  </Accordion>
+
+  <Accordion title="KeybindEditor">
+    **Location**: `src/lib/components/settings/KeybindEditor.svelte`
+
+    Advanced keybind configuration interface.
+
+    ### Props
+
+    | Prop | Type | Description |
+    |------|------|-------------|
+    | `value` | `string` | The keybind string to edit |
+    | `onsave` | `(value: string) => void` | Callback when user saves |
+    | `oncancel` | `() => void` | Callback when user cancels |
+
+    ### Keybind Structure
+
+    ```typescript
+    type Step = {
+      key: string;
+      modifiers: string[];  // shift, ctrl, alt, super
+    };
+    ```
+
+    **Features**:
+    - Prefix selection (global, all, unconsumed, performable)
+    - Multi-step sequence editor (up to 4 steps)
+    - Action dropdown with argument validation
+    - Special handling for `resize_split` action
+    - Live preview with error validation
+    - Key name autocomplete from 177+ valid keys
+
+    ### Example Output
+
+    ```
+    ctrl+shift+t=new_tab
+    global:ctrl+q=quit
+    ctrl+k>ctrl+v=new_split:down
+    ```
+  </Accordion>
+
+  <Accordion title="Dropdown">
+    **Location**: `src/lib/components/settings/Dropdown.svelte`
+
+    Select dropdown for enum settings.
+
+    ### Props
+
+    | Prop | Type | Description |
+    |------|------|-------------|
+    | `value` | `string` (bindable) | Selected value |
+    | `options` | `Array<string \| {name: string, value: string}>` | Options list |
+    | `placeholder` | `string` | Optional placeholder text |
+    | `change` | `() => void` | Optional change handler |
+
+    ### Usage
+
+    ```svelte
+    <Dropdown 
+      bind:value={cursorStyle} 
+      options={["block", "bar", "underline"]} 
+    />
+    ```
+  </Accordion>
+
+  <Accordion title="Number">
+    **Location**: `src/lib/components/settings/Number.svelte`
+
+    Numeric input with optional range slider.
+
+    ### Props
+
+    | Prop | Type | Description |
+    |------|------|-------------|
+    | `value` | `number` (bindable) | The numeric value |
+    | `min` | `number` | Minimum value |
+    | `max` | `number` | Maximum value |
+    | `step` | `number` | Step increment |
+    | `range` | `boolean` | Show as range slider |
+    | `placeholder` | `string` | Placeholder text |
+
+    ### Usage
+
+    ```svelte
+    <Number bind:value={fontSize} min={6} max={72} step={1} />
+    <Number bind:value={opacity} min={0} max={1} step={0.1} range />
+    ```
+  </Accordion>
+
+  <Accordion title="Text">
+    **Location**: `src/lib/components/settings/Text.svelte`
+
+    Text input for string settings.
+
+    ### Props
+
+    | Prop | Type | Default | Description |
+    |------|------|---------|-------------|
+    | `value` | `string` (bindable) | - | Text value |
+    | `placeholder` | `string` | `""` | Placeholder text |
+    | `blank` | `boolean` | `false` | Transparent background |
+    | `align` | `"left" \| "right"` | `"right"` | Text alignment |
+    | `change` | `(e: Event) => void` | - | Change handler |
+  </Accordion>
+
+  <Accordion title="Switch">
+    **Location**: `src/lib/components/settings/Switch.svelte`
+
+    Animated toggle switch for boolean values.
+
+    ### Props
+
+    | Prop | Type | Default | Description |
+    |------|------|---------|-------------|
+    | `checked` | `boolean` (bindable) | `false` | Switch state |
+    | `disabled` | `boolean` | `false` | Disable interaction |
+    | `onchange` | `(checked: boolean) => void` | - | Change callback |
+
+    ### Styling
+
+    Uses CSS custom properties:
+    - `--switch-body-color`
+    - `--switch-checked-color`
+    - `--switch-active-body-color`
+    - `--switch-active-checked-color`
+  </Accordion>
+
+  <Accordion title="Checkbox">
+    **Location**: `src/lib/components/settings/Checkbox.svelte`
+
+    Checkbox with animated checkmark.
+
+    ### Props
+
+    | Prop | Type | Default | Description |
+    |------|------|---------|-------------|
+    | `checked` | `boolean` (bindable) | `false` | Checked state |
+    | `disabled` | `boolean` | `false` | Disable interaction |
+    | `onchange` | `(checked: boolean) => void` | - | Change callback |
+
+    **Features**:
+    - SVG checkmark with stroke-dasharray animation
+    - Blue gradient when checked
+    - Grayscale when disabled
+  </Accordion>
+</AccordionGroup>
+
+## Layout Components
+
+<AccordionGroup>
+  <Accordion title="Group">
+    **Location**: `src/lib/components/settings/Group.svelte`
+
+    Container for related settings with optional title.
+
+    ### Props
+
+    | Prop | Type | Default | Description |
+    |------|------|---------|-------------|
+    | `title` | `string` | `""` | Group heading |
+    | `note` | `string` | `""` | Subtitle description |
+    | `flex` | `string \| number` | `""` | CSS flex value |
+    | `borderless` | `boolean` | `false` | Remove background/border |
+    | `children` | `Snippet` | - | Content slot |
+
+    ### Usage
+
+    ```svelte
+    <Group title="Appearance" note="Visual customization options">
+      <Item name="Font Size">
+        <Number bind:value={fontSize} />
+      </Item>
+    </Group>
+    ```
+  </Accordion>
+
+  <Accordion title="Item">
+    **Location**: `src/lib/components/settings/Item.svelte`
+
+    Individual setting row with label and control.
+
+    ### Props
+
+    | Prop | Type | Description |
+    |------|------|-------------|
+    | `name` | `string` | Setting label |
+    | `note` | `string` | Help text below the control |
+    | `children` | `Snippet` | The setting control component |
+
+    ### Layout
+
+    ```svelte
+    <div class="setting-item">
+      <div class="row">
+        <div class="setting-name">{name}</div>
+        <div class="setting">{@render children()}</div>
+      </div>
+      {#if note}<div class="note">{note}</div>{/if}
+    </div>
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Specialized Components
+
+<AccordionGroup>
+  <Accordion title="Theme">
+    **Location**: `src/lib/components/settings/Theme.svelte`
+
+    Special dropdown that loads color schemes.
+
+    ### Props
+
+    | Prop | Type | Description |
+    |------|------|-------------|
+    | `value` | `string` (bindable) | Theme name |
+    | `options` | `Array<string \| {name: string, value: string}>` | Available themes |
+
+    ### Implementation
+
+    ```typescript
+    async function change() {
+      await setColorScheme(value);
+    }
+    ```
+
+    When changed, fetches the theme file and updates all color settings (background, foreground, palette, etc.).
+  </Accordion>
+</AccordionGroup>
+
+## Component Patterns
+
+### Bindable Props
+
+All setting components use Svelte 5's `$bindable()` rune:
+
+```typescript
+let {value = $bindable(), options}: Props = $props();
+```
+
+### Derived State
+
+Many components use `$derived` for reactive computations:
+
+```typescript
+const borderColor = $derived(`rgba(255, 255, 255, ${luminosity(value) * 0.0027451 + 0.3})`);
+```
+
+### Snippets
+
+Layout components accept children via snippets:
+
+```typescript
+import type {Snippet} from "svelte";
+
+const {children}: {children: Snippet} = $props();
+
+{@render children()}
+```

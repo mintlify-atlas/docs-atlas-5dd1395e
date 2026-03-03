@@ -1,0 +1,563 @@
+---
+title: Configuring Fonts
+description: Learn how to configure fonts and use the font playground in Ghostty Config
+---
+
+Ghostty Config includes comprehensive font settings and a font playground for testing how fonts will look in your terminal.
+
+## Font Settings Overview
+
+Access font settings from the **Fonts** category in the navigation sidebar. Font settings are organized into several groups:
+
+- **General Font Settings** - Base size, thickening, and features
+- **Font Families** - Font families for different styles
+- **Font Styles** - Named styles for each family
+- **Font Variations** - Variable font settings
+- **Advanced Font & Cell Settings** - Fine-tuning options
+
+## The Font Playground
+
+Access the Font Playground from the **App** section in the navigation sidebar.
+
+### Playground Features
+
+The Font Playground lets you test fonts with realistic terminal output:
+
+```typescript
+// From font-playground/+page.svelte
+<div class="preview" style="
+  font-family: {fontFamily}; 
+  font-size: {fontSize + 'px'}; 
+  font-style: {italic ? 'italic' : 'normal'}; 
+  font-weight: {bold ? 700 : 400};
+">
+  <div class="row prompt">
+    <span style="color: var(--config-palette-2);">john</span>
+    <span style="color: var(--config-palette-6);">@</span>
+    <span style="color: var(--config-palette-4);">doe-pc</span>
+    <span style="color: var(--config-palette-1); font-weight: 700;">$</span>
+    ls
+  </div>
+  <div class="row">-rwxr-xr-x 1 root <span style="color: var(--config-palette-3); font-weight: 700;">Documents</span></div>
+  <div class="row">-rwxr-xr-x 1 root <span style="color: var(--config-palette-2); font-weight: 700;">Downloads</span></div>
+  <div class="row">Icons:  Powerline</div>
+</div>
+```
+
+### Using the Playground
+
+<Steps>
+  <Step title="Open Font Playground">
+    Navigate to **App → Font Playground** in the sidebar
+  </Step>
+  
+  <Step title="Enter font name">
+    Type the name of a font installed on your system in the **Font family** field
+  </Step>
+  
+  <Step title="Adjust settings">
+    Use the sliders and toggles to test different sizes, bold, and italic styles
+  </Step>
+  
+  <Step title="Observe preview">
+    The preview updates in real-time showing how the font renders with colors and symbols
+  </Step>
+</Steps>
+
+<Note>
+  The Font Playground only tests how fonts appear - it doesn't modify your actual font settings. Use the **Fonts** settings page to configure your actual terminal fonts.
+</Note>
+
+## Configuring Font Families
+
+Ghostty allows separate fonts for different text styles:
+
+### Main Font Family
+
+```typescript
+// From settings.ts
+{
+  id: "fontFamily", 
+  name: "Main font family", 
+  type: "text", 
+  value: ""
+}
+```
+
+Leave empty to use Ghostty's default font, or specify a font installed on your system:
+
+```bash
+# Example values:
+font-family = JetBrains Mono
+font-family = Iosevka
+font-family = Fira Code
+```
+
+### Style-Specific Families
+
+Configure different fonts for bold, italic, and bold-italic:
+
+```typescript
+// From settings.ts
+{
+  id: "fontFamilyBold", 
+  name: "Font family for bold text", 
+  type: "text", 
+  value: ""
+},
+{
+  id: "fontFamilyItalic", 
+  name: "Font family for italic text", 
+  type: "text", 
+  value: ""
+},
+{
+  id: "fontFamilyBoldItalic", 
+  name: "Font family for bold italic text", 
+  type: "text", 
+  value: ""
+}
+```
+
+<Tip>
+  Leave style-specific families empty to use variants of your main font family. Only set these if you want different fonts for different styles.
+</Tip>
+
+## Font Size
+
+Control the base font size for your terminal:
+
+```typescript
+// From settings.ts
+{
+  id: "fontSize", 
+  name: "Base font size", 
+  type: "number", 
+  value: 13, 
+  min: 4, 
+  max: 60, 
+  step: 0.5, 
+  range: true
+}
+```
+
+The Font Playground includes the same control:
+
+```typescript
+// From FontPreview.svelte
+<Item name="Font size">
+  <Number bind:value={fontSize} range={true} min={4} max={60} step={0.5} />
+</Item>
+```
+
+<Tabs>
+  <Tab title="Recommended Sizes">
+    Common font sizes for different display setups:
+    
+    - **12-14px**: Standard laptop displays
+    - **14-16px**: High-DPI/Retina displays
+    - **16-18px**: Large displays or accessibility needs
+    - **10-12px**: Small displays or dense information
+  </Tab>
+  
+  <Tab title="Fine Tuning">
+    Ghostty supports fractional sizes:
+    
+    ```bash
+    font-size = 13.5
+    font-size = 14.5
+    ```
+    
+    Use 0.5 increments to find the perfect size for your setup.
+  </Tab>
+</Tabs>
+
+## Font Styles
+
+Specify named styles for your fonts:
+
+```typescript
+// From settings.ts
+{
+  id: "fontStyle", 
+  name: "Main font style", 
+  type: "text", 
+  value: "default"
+},
+{
+  id: "fontStyleBold", 
+  name: "Font style for bold text", 
+  type: "text", 
+  value: "default"
+},
+{
+  id: "fontStyleItalic", 
+  name: "Font style for italic text", 
+  type: "text", 
+  value: "default"
+},
+{
+  id: "fontStyleBoldItalic", 
+  name: "Font style for bold italic text", 
+  type: "text", 
+  value: "default"
+}
+```
+
+### Using Named Styles
+
+For fonts with multiple weights, specify the style name:
+
+```bash
+# Example: Using Iosevka Heavy
+font-family = Iosevka
+font-style = Heavy
+
+# Example: Disabling italic
+font-style-italic = false
+```
+
+<Note>
+  Set a style to `false` to completely disable that variant and use the default style instead.
+</Note>
+
+## Font Features & Ligatures
+
+Control OpenType font features:
+
+```typescript
+// From settings.ts
+{
+  id: "fontFeature", 
+  name: "Font ligature settings", 
+  type: "text", 
+  value: ""
+}
+```
+
+Example configurations:
+
+<Tabs>
+  <Tab title="Enable Ligatures">
+    ```bash
+    # Enable specific ligatures
+    font-feature = liga
+    font-feature = calt
+    
+    # For Fira Code
+    font-feature = ss01  # Alternative ampersand
+    font-feature = ss02  # Greater than/less than
+    font-feature = ss03  # Arrow ligatures
+    ```
+  </Tab>
+  
+  <Tab title="Disable Ligatures">
+    ```bash
+    # Disable ligatures
+    font-feature = -liga
+    font-feature = -calt
+    ```
+  </Tab>
+</Tabs>
+
+## Font Thickening (macOS)
+
+Ghostty can artificially thicken fonts on macOS:
+
+```typescript
+// From settings.ts
+{
+  id: "fontThicken", 
+  name: "Thicken fonts", 
+  type: "switch", 
+  note: "This currently only affects macOS.",
+  value: false
+},
+{
+  id: "fontThickenStrength", 
+  name: "Thicken strength", 
+  type: "number", 
+  value: 255, 
+  min: 0, 
+  max: 255, 
+  step: 1, 
+  range: true
+}
+```
+
+<Tip>
+  Font thickening is useful for thin fonts that are hard to read. Start with the default strength of 255 and adjust if needed.
+</Tip>
+
+## Variable Fonts
+
+For variable fonts, use font variations instead of styles:
+
+```typescript
+// From settings.ts
+{
+  id: "fontVariation", 
+  name: "Main font variant", 
+  type: "text", 
+  value: ""
+},
+{
+  id: "fontVariationBold", 
+  name: "Font variant for bold text", 
+  type: "text", 
+  value: ""
+}
+// ... italic and bold-italic variants
+```
+
+Example usage:
+
+```bash
+# Variable font with custom weight
+font-family = Inter
+font-variation = wght=450
+font-variation-bold = wght=700
+```
+
+## Unicode Font Mapping
+
+Map specific Unicode ranges to different fonts:
+
+```typescript
+// From settings.ts
+{
+  id: "fontCodepointMap", 
+  name: "Unicode-specific font mapping", 
+  note: "",
+  type: "text", 
+  value: ""
+}
+```
+
+Example:
+
+```bash
+# Use Noto Sans CJK for Chinese/Japanese/Korean
+font-codepoint-map = U+4E00-9FFF="Noto Sans CJK"
+
+# Use Noto Color Emoji for emoji
+font-codepoint-map = U+1F300-1F9FF="Noto Color Emoji"
+```
+
+## Advanced Font Settings
+
+### Cell Adjustments
+
+Fine-tune cell dimensions and character positioning:
+
+```typescript
+// From settings.ts
+{
+  id: "adjustCellWidth", 
+  name: "Cell width adjustment", 
+  type: "text", 
+  value: ""
+},
+{
+  id: "adjustCellHeight", 
+  name: "Cell height adjustment", 
+  type: "text", 
+  value: ""
+},
+{
+  id: "adjustFontBaseline", 
+  name: "Font baseline adjustment", 
+  type: "text", 
+  value: ""
+}
+```
+
+Example adjustments:
+
+```bash
+# Increase cell width by 2 pixels
+adjust-cell-width = 2
+
+# Decrease cell height by 1 pixel
+adjust-cell-height = -1
+
+# Adjust baseline by 10%
+adjust-font-baseline = 10%
+```
+
+<Warning>
+  Advanced font settings have minimal validation and can make your terminal unusable. Only modify these if you understand what they do.
+</Warning>
+
+### Decoration Adjustments
+
+Customize underlines, strikethrough, and cursor:
+
+```typescript
+// From settings.ts
+{
+  id: "adjustUnderlinePosition", 
+  name: "Underline position adjustment", 
+  type: "text", 
+  value: ""
+},
+{
+  id: "adjustUnderlineThickness", 
+  name: "Underline thickness adjustment", 
+  type: "text", 
+  value: ""
+},
+{
+  id: "adjustCursorThickness", 
+  name: "Cursor thickness adjustment", 
+  type: "text", 
+  value: ""
+}
+```
+
+## Synthetic Styles
+
+Control how Ghostty generates synthetic bold/italic:
+
+```typescript
+// From settings.ts
+{
+  id: "fontSyntheticStyle", 
+  name: "Synthetic styles", 
+  note: "See the docs for more info.",
+  type: "text", 
+  value: "bold,italic,bold-italic"
+}
+```
+
+Options:
+- `bold` - Allow synthetic bold
+- `italic` - Allow synthetic italic
+- `bold-italic` - Allow synthetic bold-italic
+
+<Note>
+  Synthetic styles are generated when a font doesn't have native bold or italic variants. Most modern fonts include these variants, so synthetic rendering is rarely needed.
+</Note>
+
+## Alpha Blending
+
+Control how font rendering blends with the background:
+
+```typescript
+// From settings.ts
+{
+  id: "alphaBlending", 
+  name: "Alpha blending colorspace", 
+  type: "dropdown", 
+  value: "native", 
+  options: ["native", "linear", "linear-corrected"]
+}
+```
+
+## Testing Fonts in the Playground
+
+The Font Playground provides realistic test content:
+
+<Tabs>
+  <Tab title="Standard Output">
+    ```
+    john@doe-pc$ ls
+    -rwxr-xr-x 1 root Documents
+    -rwxr-xr-x 1 root Downloads
+    -rwxr-xr-x 1 root Pictures
+    ```
+  </Tab>
+  
+  <Tab title="Unicode Support">
+    ```
+    -rwxr-xr-x 1 root 実行可能ファイル
+    ```
+    
+    Tests how the font handles CJK characters.
+  </Tab>
+  
+  <Tab title="Symbols & Icons">
+    ```
+    Icons:  Powerline
+    ```
+    
+    Tests Powerline symbols and special glyphs.
+  </Tab>
+</Tabs>
+
+## Popular Monospace Fonts
+
+<CardGroup cols={2}>
+  <Card title="JetBrains Mono" icon="code">
+    Designed specifically for developers with excellent ligature support.
+    
+    ```bash
+    font-family = JetBrains Mono
+    font-size = 13
+    ```
+  </Card>
+  
+  <Card title="Iosevka" icon="code">
+    Highly customizable with condensed variants for dense code.
+    
+    ```bash
+    font-family = Iosevka
+    font-size = 14
+    ```
+  </Card>
+  
+  <Card title="Fira Code" icon="code">
+    Popular font with extensive programming ligatures.
+    
+    ```bash
+    font-family = Fira Code
+    font-feature = liga
+    ```
+  </Card>
+  
+  <Card title="Cascadia Code" icon="code">
+    Microsoft's font for Windows Terminal with Powerline support.
+    
+    ```bash
+    font-family = Cascadia Code
+    font-size = 13
+    ```
+  </Card>
+</CardGroup>
+
+## Exporting Font Settings
+
+Font settings are exported in Ghostty's config format:
+
+```bash
+# Generated config example
+font-family = JetBrains Mono
+font-size = 14
+font-feature = liga
+font-thicken = true
+font-thicken-strength = 200
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Test before committing">
+    Use the Font Playground to test fonts before setting them as your main font family. Check that all glyphs render correctly.
+  </Accordion>
+  
+  <Accordion title="Consider ligatures">
+    Programming ligatures can improve code readability but may confuse some users. Test with real code before enabling.
+  </Accordion>
+  
+  <Accordion title="Match your display">
+    Adjust font size based on your display DPI. High-DPI displays often need larger sizes.
+  </Accordion>
+  
+  <Accordion title="Leave styles empty">
+    For most fonts, leave font-style settings at "default" to use the font's built-in variants.
+  </Accordion>
+  
+  <Accordion title="Test Unicode support">
+    If you work with non-Latin scripts, test that your chosen font supports those characters.
+  </Accordion>
+</AccordionGroup>

@@ -1,0 +1,444 @@
+---
+title: Customizing Colors
+description: Learn how to customize color schemes and palettes in Ghostty Config
+---
+
+Ghostty Config provides powerful tools for customizing your terminal's color scheme, from selecting pre-made themes to fine-tuning individual palette colors.
+
+## Color Settings Overview
+
+Access color settings from the **Colors** category in the navigation sidebar. The colors panel includes several groups:
+
+- **General** - Theme selection and palette generation options
+- **Base Colors** - Background, foreground, and selection colors
+- **Cursor** - Cursor color and appearance
+- **Color Palette** - All 256 terminal colors
+
+## Selecting a Theme
+
+Ghostty Config includes 200+ pre-made color schemes from the [iTerm2 Color Schemes](https://github.com/mbadolato/iTerm2-Color-Schemes) repository.
+
+<Steps>
+  <Step title="Open Colors settings">
+    Navigate to **Colors** in the sidebar
+  </Step>
+  
+  <Step title="Choose a theme">
+    In the **General** section, click the **Color theme** dropdown and select a theme
+  </Step>
+  
+  <Step title="Theme is applied">
+    The theme's colors are automatically applied to base colors and palette
+  </Step>
+</Steps>
+
+### Theme Loading Implementation
+
+Themes are loaded dynamically from GitHub:
+
+```typescript
+// From settings.ts
+export const fetchColorScheme = async (theme: string) => {
+  const response = await fetch(
+    `https://raw.githubusercontent.com/mbadolato/iTerm2-Color-Schemes/master/ghostty/${theme}`
+  );
+  if (!response.ok) throw new Error(`Error fetching data: ${response.statusText}`);
+  return await response.text();
+};
+
+// From config.svelte.ts
+export async function setColorScheme(name: string) {
+  if (name === "") return resetColorScheme();
+  const colorSchemeResponse = await fetchColorScheme(name);
+  try {
+    const parsed = parse(colorSchemeResponse);
+    load(parsed);
+  }
+  catch (error) {
+    console.error(error);
+  }
+}
+```
+
+<Note>
+  When you select a theme, it overwrites your current color settings. Any colors you customize afterward will override the theme's values.
+</Note>
+
+## Base Colors
+
+Base colors control the fundamental appearance of your terminal:
+
+### Background & Foreground
+
+<Tabs>
+  <Tab title="Background">
+    **Background color** sets the default background color for your terminal.
+
+    ```typescript
+    // From settings.ts
+    {id: "background", name: "Background color", type: "color", value: "#282c34"}
+    ```
+
+    Common background colors:
+    - Light themes: `#ffffff`, `#f8f8f8`
+    - Dark themes: `#1d1f21`, `#282c34`, `#2e3440`
+  </Tab>
+  
+  <Tab title="Foreground">
+    **Foreground color** sets the default text color.
+
+    ```typescript
+    {id: "foreground", name: "Foreground color", type: "color", value: "#ffffff"}
+    ```
+
+    Ensure sufficient contrast with your background color for readability.
+  </Tab>
+</Tabs>
+
+### Selection Colors
+
+Customize how selected text appears:
+
+```typescript
+// From settings.ts
+{
+  id: "selectionBackground", 
+  name: "Selection background color", 
+  type: "color", 
+  value: ""
+},
+{
+  id: "selectionForeground", 
+  name: "Selection foreground color", 
+  type: "color", 
+  value: ""
+}
+```
+
+<Accordion title="Selection preview">
+  The Colors page includes a preview showing selected text:
+  
+  ```typescript
+  // From settings.ts
+  note: "The preview here shows selected text in the second line of the command output."
+  ```
+</Accordion>
+
+## Cursor Colors
+
+Customize cursor appearance in the **Cursor** group:
+
+<CardGroup cols={2}>
+  <Card title="Cursor Color" icon="paintbrush">
+    Main cursor color. Leave empty to use foreground color.
+    
+    ```typescript
+    {id: "cursorColor", name: "Cursor color", type: "color", value: ""}
+    ```
+  </Card>
+  
+  <Card title="Cursor Text" icon="font">
+    Color of text under the cursor. Leave empty for automatic inversion.
+    
+    ```typescript
+    {id: "cursorText", name: "Text color under cursor", type: "color", value: ""}
+    ```
+  </Card>
+</CardGroup>
+
+### Cursor Opacity
+
+Control cursor transparency:
+
+```typescript
+{
+  id: "cursorOpacity", 
+  name: "Cursor opacity", 
+  type: "number", 
+  value: 1, 
+  range: true, 
+  min: 0, 
+  max: 1, 
+  step: 0.05
+}
+```
+
+<Note>
+  The Colors page includes a live cursor preview that blinks at 1-second intervals. The actual blink rate in Ghostty may differ based on your cursor settings.
+</Note>
+
+## The Color Palette
+
+Ghostty uses a 256-color palette for terminal output. Colors are organized in groups:
+
+- **0-7**: Standard colors (black, red, green, yellow, blue, magenta, cyan, white)
+- **8-15**: Bright variants of standard colors
+- **16-231**: 216-color cube (6×6×6)
+- **232-255**: Grayscale ramp
+
+### Palette UI
+
+The palette is displayed as an 8×32 grid:
+
+```svelte
+// From Palette.svelte
+<div class="color-grid">
+  {#each value as _, i (i)}
+    <Color 
+      defaultValue={defaultValue[i]} 
+      bind:value={value[i]} 
+      size={40} 
+      label={(i + 1).toString()} 
+    />
+  {/each}
+</div>
+
+<style>
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(32, 1fr);
+  grid-row-gap: 14px;
+}
+</style>
+```
+
+### Editing Palette Colors
+
+<Steps>
+  <Step title="Navigate to palette">
+    Scroll to the **Color Palette** section in the Colors settings
+  </Step>
+  
+  <Step title="Click a color">
+    Click any of the 256 color swatches to open the color picker
+  </Step>
+  
+  <Step title="Choose new color">
+    Select a new color using the picker or enter a hex value
+  </Step>
+  
+  <Step title="Apply changes">
+    The color updates immediately in the preview
+  </Step>
+</Steps>
+
+### Palette Generation
+
+Ghostty can automatically generate colors 16-231:
+
+```typescript
+// From settings.ts
+{
+  id: "paletteGenerate", 
+  name: "Auto-generate missing palette colors", 
+  note: "When enabled, Ghostty will generate missing colors (indices 16-231) based on the first 16.",
+  type: "switch", 
+  value: true
+},
+{
+  id: "paletteHarmonious", 
+  name: "Harmonious palette generation", 
+  note: "Inverts generated palette colors. Has no effect if auto-generation is disabled.",
+  type: "switch", 
+  value: false
+}
+```
+
+<Tip>
+  Enable **Auto-generate missing palette colors** to focus on customizing just the first 16 colors. Ghostty will create harmonious variations for the rest.
+</Tip>
+
+## Advanced Color Options
+
+### Bold Text Color
+
+Control how bold text is rendered:
+
+```typescript
+{
+  id: "boldColor", 
+  name: "Bold text color", 
+  note: "Set to `bright` to use bright palette colors for bold text, or a hex color value. Leave empty to use the default.",
+  type: "text", 
+  value: ""
+}
+```
+
+Options:
+- Leave empty: Bold uses same color as normal text
+- `bright`: Bold uses bright palette colors (8-15)
+- Hex value: Bold uses specific color (e.g., `#ffffff`)
+
+### Faint Text Opacity
+
+Control opacity of faint text:
+
+```typescript
+{
+  id: "faintOpacity", 
+  name: "Faint text opacity", 
+  type: "number", 
+  range: true, 
+  value: 0.5, 
+  min: 0, 
+  max: 1, 
+  step: 0.01
+}
+```
+
+### Minimum Contrast
+
+Ensure readable contrast ratios:
+
+```typescript
+{
+  id: "minimumContrast", 
+  name: "Minimum contrast", 
+  type: "number", 
+  value: 1, 
+  range: true, 
+  min: 1, 
+  max: 21, 
+  step: 0.1
+}
+```
+
+<Note>
+  A contrast ratio of 1 means no adjustment. Higher values ensure better readability by automatically adjusting colors that don't meet the minimum threshold.
+</Note>
+
+## Exporting Color Schemes
+
+When you export your configuration, colors are saved in Ghostty's format:
+
+```typescript
+// From config.svelte.ts - diff() function
+else if (Array.isArray(config[key]) && key === "palette") {
+  const toAdd = [];
+  for (let p = 0; p < defaults[key].length; p++) {
+    if (config[key][p] === defaults[key][p]) continue;
+    toAdd.push(`${p}=${config[key][p]}`);
+  }
+  if (toAdd.length) output[keyToConfig(key)] = toAdd;
+}
+```
+
+Example exported output:
+
+```bash
+# Base colors
+background = #282c34
+foreground = #ffffff
+
+# Selection
+selection-background = #3e4451
+selection-foreground = #ffffff
+
+# Cursor
+cursor-color = #528bff
+
+# Palette (only changed colors)
+palette = 0=#1d1f21
+palette = 1=#cc6666
+palette = 2=#b5bd68
+palette = 3=#f0c674
+```
+
+<Tip>
+  Only palette colors that differ from defaults are exported, keeping your config file clean.
+</Tip>
+
+## Color Picker Component
+
+The color picker accepts hex colors with or without the `#` prefix:
+
+```typescript
+// From parse.ts
+const colors = [
+  "background", 
+  "foreground", 
+  "cursor-color", 
+  "selection-background", 
+  "selection-foreground"
+];
+
+if (colors.includes(key) && value.length === 6 && !value.startsWith("#")) {
+  results[newKey] = `#${value}`;
+}
+else {
+  results[newKey] = value;
+}
+```
+
+## Resetting Colors
+
+Reset to default colors:
+
+```typescript
+// From config.svelte.ts
+export function resetColorScheme() {
+  const keys = [
+    "background",
+    "foreground",
+    "cursorColor",
+    "selectionBackground",
+    "selectionForeground"
+  ];
+  
+  for (const key of keys) {
+    config[key] = defaults[key];
+  }
+  
+  for (let c = 0; c < defaults.palette.length; c++) {
+    config.palette[c] = defaults.palette[c];
+  }
+}
+```
+
+<Warning>
+  Resetting colors will overwrite all your color customizations. Consider exporting your configuration first as a backup.
+</Warning>
+
+## Popular Color Schemes
+
+<Tabs>
+  <Tab title="Dark Themes">
+    Popular dark themes available in Ghostty Config:
+    
+    - **Nord** - Arctic, north-bluish color palette
+    - **Dracula** - Dark theme with vibrant colors
+    - **Gruvbox Dark** - Retro groove color scheme
+    - **Tokyo Night** - Clean, elegant dark theme
+    - **Catppuccin Mocha** - Soothing pastel dark theme
+  </Tab>
+  
+  <Tab title="Light Themes">
+    Popular light themes available in Ghostty Config:
+    
+    - **Solarized Light** - Precision colors for machines and people
+    - **Gruvbox Light** - Light variant of the retro groove scheme
+    - **Catppuccin Latte** - Soothing pastel light theme
+    - **Papercolor Light** - Inspired by Google's Material Design
+  </Tab>
+</Tabs>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Start with a theme">
+    Begin by selecting a pre-made theme that's close to your desired look, then customize individual colors as needed.
+  </Accordion>
+  
+  <Accordion title="Ensure contrast">
+    Maintain sufficient contrast between background and foreground colors for readability. Use the minimum contrast setting if needed.
+  </Accordion>
+  
+  <Accordion title="Test with real content">
+    After customizing colors, test your theme with real terminal output, syntax highlighting, and different applications.
+  </Accordion>
+  
+  <Accordion title="Focus on first 16 colors">
+    Most terminal applications primarily use the first 16 palette colors. Enable palette generation for the rest.
+  </Accordion>
+</AccordionGroup>

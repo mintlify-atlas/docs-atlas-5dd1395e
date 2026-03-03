@@ -1,0 +1,99 @@
+---
+title: Local Development Setup
+description: Learn how to clone the repository, install dependencies, and run Ghostty Config locally for development.
+---
+
+## Prerequisites
+
+Before you begin, make sure you have [Bun](https://bun.sh) installed on your system. Bun is a fast all-in-one JavaScript runtime that we use for package management and running scripts.
+
+```bash
+curl -fsSL https://bun.sh/install | bash
+```
+
+## Installation
+
+<Steps>
+  <Step title="Clone the repository">
+    Clone the Ghostty Config repository from GitHub:
+    
+    ```bash
+    git clone https://github.com/zerebos/ghostty-config.git
+    cd ghostty-config
+    ```
+  </Step>
+
+  <Step title="Install dependencies">
+    Install all required dependencies using Bun:
+    
+    ```bash
+    bun install
+    ```
+    
+    This will install all packages defined in `package.json`, including:
+    - Svelte 5 and SvelteKit
+    - TypeScript
+    - Vite
+    - Development tools (ESLint, Prettier, Vitest)
+  </Step>
+
+  <Step title="Start the development server">
+    Run the development server:
+    
+    ```bash
+    bun run dev
+    ```
+    
+    The application will be available at `http://localhost:5173` by default. The dev server includes:
+    - Hot module replacement (HMR)
+    - Automatic page reloads on file changes
+    - TypeScript type checking
+  </Step>
+</Steps>
+
+## Available Scripts
+
+The project includes several useful npm scripts defined in `package.json`:
+
+| Script | Command | Description |
+|--------|---------|-------------|
+| `dev` | `bun run dev` | Start the Vite development server |
+| `build` | `bun run build` | Build the production-ready static site |
+| `preview` | `bun run preview` | Preview the production build locally |
+| `check` | `bun run check` | Run Svelte and TypeScript type checking |
+| `check:watch` | `bun run check:watch` | Run type checking in watch mode |
+| `test` | `bun run test` | Run the test suite with Vitest |
+| `lint` | `bun run lint` | Lint the codebase with ESLint |
+| `format` | `bun run format` | Format code with Prettier and fix linting issues |
+
+## Development Workflow
+
+1. **Start the dev server**: Run `bun run dev` to start developing
+2. **Make changes**: Edit files in `src/` - changes will hot-reload automatically
+3. **Check types**: Run `bun run check` to verify TypeScript types
+4. **Format code**: Run `bun run format` before committing
+5. **Test changes**: Run `bun run test` to ensure tests pass
+6. **Build**: Run `bun run build` to create a production build in `build/`
+
+## Troubleshooting
+
+### Port already in use
+
+If port 5173 is already in use, Vite will automatically try the next available port. Check the terminal output for the actual URL.
+
+### Dependency issues
+
+If you encounter dependency problems, try removing `node_modules` and reinstalling:
+
+```bash
+rm -rf node_modules
+bun install
+```
+
+### Type errors
+
+Run the type checker to see detailed error information:
+
+```bash
+bun run check
+```

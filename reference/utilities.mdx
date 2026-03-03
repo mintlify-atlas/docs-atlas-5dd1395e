@@ -1,0 +1,558 @@
+---
+title: Utilities
+description: Utility functions for parsing config, color manipulation, and keybind handling
+---
+
+## Overview
+
+Utility modules provide core functionality for config parsing, color operations, and keybind validation.
+
+## parse.ts
+
+**Location**: `src/lib/utils/parse.ts`
+
+Parses Ghostty config file format into JavaScript objects.
+
+### Default Export
+
+```typescript
+export default function (configString: string): ParsedConfig
+```
+
+### Return Type
+
+```typescript
+type ParsedConfig = {
+  palette: Array<HexColor | "">;
+  keybind: KeybindString[];
+  [key: string]: string | string[];
+}
+```
+
+### Parsing Rules
+
+**Line format**: `key = value`
+```typescript
+const re = /^\s*([a-z-]+)[\s]*=\s*(.*)\s*$/;
+```
+
+**Key conversion**: Kebab-case → camelCase
+```typescript
+const split = key.split("-");
+let newKey = split[0].trim();
+for (let s = 1; s < split.length; s++) {
+  newKey += split[s].charAt(0).toUpperCase();
+  newKey += split[s].substring(1);
+}
+// "font-size" → "fontSize"
+```
+
+### Special Handling
+
+<AccordionGroup>
+  <Accordion title="Palette Colors">
+    Format: `palette = N=color`
+
+    ```typescript
+    if (key === "palette") {
+      const split = value.split("=");
+      const num = parseInt(split[0].trim());
+      const color = split[1].trim() as HexColor;
+      if (num < 0 || num > 255) continue;
+      results.palette[num] = color;
+    }
+    ```
+
+    **Example**:
+    ```
+    palette = 0=#000000
+    palette = 15=#ffffff
+    ```
+  </Accordion>
+
+  <Accordion title="Keybinds">
+    Accumulated into an array.
+
+    ```typescript
+    if (key === "keybind") {
+      results.keybind.push(value as KeybindString);
+    }
+    ```
+
+    **Example**:
+    ```
+    keybind = ctrl+t=new_tab
+    keybind = ctrl+shift+v=paste_from_clipboard
+    ```
+  </Accordion>
+
+  <Accordion title="Color Values">
+    Auto-prefixes `#` for 6-character hex values.
+
+    ```typescript
+    const colors = [
+      "background", "foreground", "cursor-color",
+      "selection-background", "selection-foreground"
+    ];
+
+    if (colors.includes(key) && value.length === 6 && !value.startsWith("#")) {
+      results[newKey] = `#${value}`;
+    }
+    ```
+
+    **Example**:
+    ```
+    background = 1e1e1e     → { background: "#1e1e1e" }
+    background = #1e1e1e    → { background: "#1e1e1e" }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Usage Example
+
+```typescript
+import parse from "$lib/utils/parse";
+
+const configText = `
+font-size = 14
+background = 1e1e1e
+palette = 0=000000
+keybind = ctrl+t=new_tab
+`;
+
+const config = parse(configText);
+// {
+//   fontSize: "14",
+//   background: "#1e1e1e",
+//   palette: ["#000000", "", "", ...],
+//   keybind: ["ctrl+t=new_tab"]
+// }
+```
+
+## colors.ts
+
+**Location**: `src/lib/utils/colors.ts`
+
+Color conversion and manipulation utilities.
+
+### Types
+
+```typescript
+export type HexColor = `#${string}`;
+export type RgbArray = [number, number, number];
+export type HsvArray = [number, number, number];
+export type HsvObj = {hue: number, saturation: number, value: number};
+```
+
+### Functions
+
+<AccordionGroup>
+  <Accordion title="luminosity()">
+    Calculates relative luminance of a color.
+
+    ```typescript
+    export function luminosity(color: HexColor): number
+    ```
+
+    **Formula**: ITU-R BT.709 weighted RGB
+    ```typescript
+    const red = int >> 16 & 0xFF;
+    const green = int >> 8 & 0xFF;
+    const blue = int >> 0 & 0xFF;
+    return (0.2126 * red) + (0.7152 * green) + (0.0722 * blue);
+    ```
+
+    **Returns**: Value from 0 (black) to 255 (white)
+
+    ### Usage
+
+    ```typescript
+    luminosity("#000000")  // 0
+    luminosity("#ffffff")  // 255
+    luminosity("#808080")  // ~128
+    ```
+  </Accordion>
+
+  <Accordion title="isDark()">
+    Tests if a color is dark.
+
+    ```typescript
+    export function isDark(color: HexColor): boolean
+    ```
+
+    Returns `true` if luminosity < 128.
+
+    ### Usage
+
+    ```typescript
+    const textColor = isDark(bgColor) ? "white" : "black";
+    ```
+  </Accordion>
+
+  <Accordion title="hsvToRgb()">
+    Converts HSV to RGB.
+
+    ```typescript
+    export function hsvToRgb(
+      hue: number,        // 0-1
+      saturation: number, // 0-1
+      value: number       // 0-1
+    ): RgbArray           // [0-255, 0-255, 0-255]
+    ```
+
+    **Algorithm**: Standard HSV to RGB conversion from Wikipedia.
+
+    ### Example
+
+    ```typescript
+    hsvToRgb(0, 1, 1)      // [255, 0, 0] - red
+    hsvToRgb(0.33, 1, 1)   // [0, 255, 0] - green
+    hsvToRgb(0, 0, 1)      // [255, 255, 255] - white
+    ```
+  </Accordion>
+
+  <Accordion title="rgbToHsv()">
+    Converts RGB to HSV.
+
+    ```typescript
+    export function rgbToHsv(
+      red: number,    // 0-255
+      green: number,  // 0-255
+      blue: number    // 0-255
+    ): HsvObj         // {hue: 0-1, saturation: 0-1, value: 0-1}
+    ```
+
+    ### Example
+
+    ```typescript
+    rgbToHsv(255, 0, 0)
+    // {hue: 0, saturation: 1, value: 1}
+
+    rgbToHsv(128, 128, 128)
+    // {hue: 0, saturation: 0, value: 0.502}
+    ```
+  </Accordion>
+
+  <Accordion title="rgbToHex()">
+    Converts RGB values to hex color.
+
+    ```typescript
+    export function rgbToHex(
+      red: number,    // 0-255
+      green: number,  // 0-255
+      blue: number    // 0-255
+    ): HexColor
+    ```
+
+    ### Implementation
+
+    ```typescript
+    const get = (color: number) => 
+      color.toString(16).padStart(2, "0").toUpperCase();
+    return `#${get(red)}${get(green)}${get(blue)}`;
+    ```
+
+    ### Example
+
+    ```typescript
+    rgbToHex(255, 0, 0)     // "#FF0000"
+    rgbToHex(64, 128, 128)  // "#408080"
+    ```
+  </Accordion>
+
+  <Accordion title="hexToRgb()">
+    Converts hex color to RGB array.
+
+    ```typescript
+    export function hexToRgb(string: HexColor): RgbArray
+    ```
+
+    ### Example
+
+    ```typescript
+    hexToRgb("#FF0000")  // [255, 0, 0]
+    hexToRgb("#408080")  // [64, 128, 128]
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## keybinds.ts
+
+**Location**: `src/lib/utils/keybinds.ts`
+
+Keybind parsing, validation, and formatting.
+
+### Constants
+
+<AccordionGroup>
+  <Accordion title="KEY_NAMES">
+    Array of 177 valid key names.
+
+    ```typescript
+    const KEY_NAMES = [
+      "backquote", "backslash", "bracket_left", "bracket_right",
+      "key_a", "key_b", ..., "key_z",
+      "f1", "f2", ..., "f24",
+      "arrow_up", "arrow_down", "arrow_left", "arrow_right",
+      "numpad_0", ..., "numpad_9",
+      "copy", "paste", "cut",
+      // ... many more
+    ] as const;
+
+    export type KeyName = (typeof KEY_NAMES)[number];
+    ```
+  </Accordion>
+
+  <Accordion title="VALID_MODIFIERS">
+    ```typescript
+    const VALID_MODIFIERS = ["shift", "ctrl", "alt", "super"];
+    ```
+
+    **Aliases** (normalized to standard form):
+    - `control` → `ctrl`
+    - `cmd`, `command` → `super`
+    - `opt`, `option` → `alt`
+  </Accordion>
+
+  <Accordion title="VALID_PREFIXES">
+    ```typescript
+    const VALID_PREFIXES = ["all", "global", "unconsumed", "performable"];
+    ```
+  </Accordion>
+
+  <Accordion title="ACTION_DEFINITIONS">
+    Array of 80+ action definitions.
+
+    ```typescript
+    export interface ActionDefinition {
+      name: string;
+      type: "none" | "number" | "integer" | "free" | "enum" | "text" | "resize";
+      options?: string[];
+      allowEmpty?: boolean;
+    }
+
+    const ACTION_DEFINITIONS: ActionDefinition[] = [
+      {name: "ignore", type: "none"},
+      {name: "new_tab", type: "none"},
+      {name: "goto_tab", type: "integer"},
+      {
+        name: "copy_to_clipboard",
+        type: "enum",
+        options: ["plain", "vt", "html", "mixed"],
+        allowEmpty: true
+      },
+      {name: "resize_split", type: "resize"},
+      // ...
+    ];
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Types
+
+```typescript
+export type ParsedTriggerStep = {
+  key: string;
+  modifiers: string[];
+};
+
+export type ParsedTrigger = {
+  prefixes: string[];
+  steps: ParsedTriggerStep[];
+};
+
+export type ParsedKeybind = {
+  trigger?: ParsedTrigger;
+  action?: string;
+  args?: string;
+  error?: string[];
+};
+```
+
+### Functions
+
+<AccordionGroup>
+  <Accordion title="parseKeybind()">
+    Parses and validates a complete keybind string.
+
+    ```typescript
+    export function parseKeybind(value: string): ParsedKeybind
+    ```
+
+    ### Format
+
+    ```
+    [prefixes:]key[+modifier][>key[+modifier]]=action[:arg]
+    ```
+
+    ### Examples
+
+    ```typescript
+    parseKeybind("ctrl+t=new_tab")
+    // {
+    //   trigger: {
+    //     prefixes: [],
+    //     steps: [{key: "t", modifiers: ["ctrl"]}]
+    //   },
+    //   action: "new_tab",
+    //   args: undefined,
+    //   error: []
+    // }
+
+    parseKeybind("global:ctrl+q=quit")
+    parseKeybind("ctrl+k>ctrl+v=new_split:down")
+    parseKeybind("shift+alt+super+key_a=ignore")
+    ```
+
+    ### Validation
+
+    Returns errors for:
+    - Invalid key names
+    - Invalid modifiers
+    - Invalid action names
+    - Wrong argument types
+    - Global/all keybinds with sequences
+    - More than 4 modifiers
+  </Accordion>
+
+  <Accordion title="parseTrigger()">
+    Parses just the trigger portion (before `=`).
+
+    ```typescript
+    export function parseTrigger(triggerString: string): ParsedTrigger | null
+    ```
+
+    ### Process
+
+    1. Normalize whitespace
+    2. Extract prefixes (`global:`, `all:`, etc.)
+    3. Split on `>` for sequences
+    4. Parse each step's modifiers and key
+
+    ### Example
+
+    ```typescript
+    parseTrigger("global:ctrl+shift+t")
+    // {
+    //   prefixes: ["global"],
+    //   steps: [{key: "t", modifiers: ["ctrl", "shift"]}]
+    // }
+
+    parseTrigger("ctrl+k>v")
+    // {
+    //   prefixes: [],
+    //   steps: [
+    //     {key: "k", modifiers: ["ctrl"]},
+    //     {key: "v", modifiers: []}
+    //   ]
+    // }
+    ```
+  </Accordion>
+
+  <Accordion title="formatTrigger()">
+    Formats a ParsedTrigger back to string.
+
+    ```typescript
+    export function formatTrigger(trigger: ParsedTrigger): string
+    ```
+
+    **Normalizations**:
+    - Removes duplicate prefixes
+    - Sorts modifiers alphabetically
+    - Lowercases keys
+
+    ### Example
+
+    ```typescript
+    formatTrigger({
+      prefixes: ["global"],
+      steps: [{key: "T", modifiers: ["shift", "ctrl"]}]
+    })
+    // "global:ctrl+shift+t"
+    ```
+  </Accordion>
+
+  <Accordion title="getDiagnostics()">
+    Validates an array of keybinds and detects duplicates.
+
+    ```typescript
+    export function getDiagnostics(keybinds: string[]): Diagnostic[]
+    ```
+
+    **Returns**:
+    ```typescript
+    type Diagnostic = {
+      status: "ok" | "invalid";
+      duplicate: boolean;
+      errors: string[];
+      canonical: string;
+    }
+    ```
+
+    ### Usage
+
+    ```typescript
+    const diagnostics = getDiagnostics([
+      "ctrl+t=new_tab",
+      "ctrl+t=new_window",  // duplicate trigger!
+      "invalid syntax"
+    ]);
+    // [
+    //   {status: "ok", duplicate: true, errors: [], canonical: "ctrl+t"},
+    //   {status: "ok", duplicate: true, errors: [], canonical: "ctrl+t"},
+    //   {status: "invalid", duplicate: false, errors: [...], canonical: ""}
+    // ]
+    ```
+  </Accordion>
+
+  <Accordion title="canonicalTrigger()">
+    Normalizes trigger to canonical form for comparison.
+
+    ```typescript
+    export function canonicalTrigger(parsed: ParsedTrigger): string
+    ```
+
+    **Normalizations**:
+    - Sorts modifiers alphabetically
+    - Lowercases everything
+    - Removes whitespace
+
+    ### Example
+
+    ```typescript
+    // These all produce "alt+ctrl+t":
+    canonicalTrigger(parseTrigger("ctrl+alt+t"));
+    canonicalTrigger(parseTrigger("alt+ctrl+t"));
+    canonicalTrigger(parseTrigger("Ctrl + Alt + T"));
+    ```
+  </Accordion>
+</AccordionGroup>
+
+### Action Type Validation
+
+```typescript
+function validateAction(action: string, args: string | undefined): string[]
+```
+
+**Type-specific validation**:
+
+- `none`: No arguments allowed
+- `free`: Any argument or none (if `allowEmpty`)
+- `text`: Requires Zig string literal
+- `number`: Must be numeric
+- `integer`: Must be whole number
+- `enum`: Must be in options list
+- `resize`: Format `direction,offset` where direction ∈ {up, down, left, right, auto}
+
+### Key Normalization
+
+Accepts multiple formats:
+
+```typescript
+"KeyA"        → "key_a"
+"ArrowUp"     → "arrow_up"
+"PageDown"    → "page_down"
+"F1"          → "f1"
+"a"           → "a"  (single character)
+"physical:q"  → "physical:q"  (physical layout)
+```

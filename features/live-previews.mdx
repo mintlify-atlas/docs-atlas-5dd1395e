@@ -1,0 +1,386 @@
+---
+title: Live Preview Components
+description: Real-time visualization of Ghostty settings including cursors, colors, fonts, and icons
+---
+
+Ghostty Config includes live preview components that update in real-time as you change settings, giving you instant feedback on how your configuration will look.
+
+## Preview Components
+
+The application includes several specialized preview components:
+
+<CardGroup cols={2}>
+  <Card title="Cursor Preview" icon="i-cursor">
+    Shows cursor style, color, opacity, and blink animation
+  </Card>
+  <Card title="Font Preview" icon="font">
+    Displays terminal text with current font settings
+  </Card>
+  <Card title="Color Preview" icon="palette">
+    Terminal output showing color scheme and selection
+  </Card>
+  <Card title="Palette Preview" icon="swatchbook">
+    Grid of all 256 palette colors
+  </Card>
+  <Card title="Icon Preview" icon="image">
+    macOS app icon with custom styles (macOS only)
+  </Card>
+</CardGroup>
+
+## Cursor Preview
+
+The cursor preview (views/CursorPreview.svelte:1) demonstrates cursor appearance in a mini terminal:
+
+### Features
+
+- **Live cursor animation** - Blinks at 1-second intervals
+- **Style variants** - Block, bar, underline, hollow block
+- **Color customization** - Cursor color and text-under-cursor color
+- **Opacity control** - Transparent cursor support
+
+### Implementation
+
+```typescript
+let isCursorVisible = $state(true);
+
+onMount(() => {
+  const interval = setInterval(() => {
+    if (config.cursorStyleBlink !== "false") {
+      isCursorVisible = !isCursorVisible;
+    } else {
+      isCursorVisible = true;
+    }
+  }, 1000);
+  return () => clearInterval(interval);
+});
+
+const cursorColor = $derived(config.cursorColor || config.foreground);
+const cursorText = $derived(
+  isCursorVisible 
+    ? config.cursorText || config.background 
+    : config.foreground
+);
+const cursorOpacity = $derived(
+  isCursorVisible 
+    ? Math.round(config.cursorOpacity * 255).toString(16) 
+    : "00"
+);
+```
+
+### Display
+
+The preview shows a git command:
+
+```bash
+john@doe-pc$ git commit -m "█"
+```
+
+With the cursor positioned on the closing quote.
+
+### Cursor Styles
+
+CSS handles different cursor styles:
+
+```css
+/* Block cursor (default) */
+.cursor.block {
+  background-color: var(--cursor-color);
+  color: var(--cursor-text);
+}
+
+/* Bar cursor (vertical line) */
+.cursor.bar {
+  background-color: transparent;
+  border-left: 1px solid var(--cursor-color);
+  margin-left: 0;
+}
+
+/* Underline cursor */
+.cursor.underline {
+  background-color: transparent;
+  border-bottom: 1px solid var(--cursor-color);
+}
+
+/* Hollow block cursor */
+.cursor.block_hollow {
+  background-color: transparent;
+  border: 1px solid var(--cursor-color);
+}
+```
+
+## Font Preview
+
+The font preview (views/FontPreview.svelte:1) shows how terminal text renders with current font settings:
+
+### Sample Output
+
+```bash
+john@doe-pc$ ls
+-rwxr-xr-x 1 root Documents
+-rwxr-xr-x 1 root Downloads
+-rwxr-xr-x 1 root Pictures
+-rwxr-xr-x 1 root Music
+-rwxr-xr-x 1 root 実行可能ファイル
+-rwxr-xr-x 1 root sym -> link
+Icons:     Powerline
+```
+
+### What It Tests
+
+- **Font family** - The actual font face
+- **Font size** - Size in pixels
+- **Bold/italic** - Style rendering
+- **Unicode** - Japanese characters (実行可能ファイル)
+- **Colored text** - Using palette colors
+- **Icons** - Powerline glyphs
+- **Line spacing** - Vertical rhythm
+
+### CSS Variables
+
+The preview uses CSS custom properties that update reactively:
+
+```css
+.preview {
+  background: var(--config-bg);
+  font-family: var(--config-font-family);
+  font-size: var(--config-font-size);
+  color: var(--config-fg);
+}
+```
+
+These variables are bound to the config store:
+
+```typescript
+// In the global CSS
+:root {
+  --config-bg: #282c34;
+  --config-fg: #ffffff;
+  --config-font-family: monospace;
+  --config-font-size: 13px;
+  --config-palette-0: #1d1f21;
+  --config-palette-1: #cc6666;
+  /* ... 14 more palette colors */
+}
+```
+
+## Base Color Preview
+
+Shows background, foreground, selection colors:
+
+```bash
+john@doe-pc$ echo "hello world"
+hello world
+     ^^^^^
+  (selected text)
+```
+
+The preview demonstrates:
+- Terminal background color
+- Default text (foreground) color
+- Selected text appearance
+- Selection background/foreground colors
+
+## Palette Preview
+
+The palette preview (views/PalettePreview.svelte:1) displays all 256 terminal colors as a grid:
+
+### Structure
+
+- **First 16 colors** - Standard ANSI palette (displayed prominently)
+- **Colors 16-231** - 216-color cube (6×6×6)
+- **Colors 232-255** - 24-step grayscale
+
+### Implementation
+
+```svelte
+<div class="color-grid">
+  {#each value as _, i (i)}
+    <Color 
+      defaultValue={defaultValue[i]} 
+      bind:value={value[i]} 
+      size={40} 
+      label={(i + 1).toString()} 
+    />
+  {/each}
+</div>
+```
+
+```css
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(32, 1fr);
+  grid-row-gap: 14px;
+}
+```
+
+Each color is clickable to open a color picker.
+
+## App Icon Preview
+
+The icon preview (views/AppIconPreview.svelte:1) shows the macOS app icon with custom styling:
+
+### Icon Variants
+
+The preview fetches icons from the Ghostty GitHub repository:
+
+```typescript
+const cdnBase = "https://cdn.jsdelivr.net/gh/ghostty-org/ghostty@main/macos/Assets.xcassets";
+
+const iconUrls: Record<string, string> = {
+  official: `${cdnBase}/AppIconImage.imageset/macOS-AppIcon-1024px.png`,
+  blueprint: `${cdnBase}/Alternate%20Icons/BlueprintImage.imageset/macOS-AppIcon-1024px.png`,
+  chalkboard: `${cdnBase}/Alternate%20Icons/ChalkboardImage.imageset/macOS-AppIcon-1024px.png`,
+  microchip: `${cdnBase}/Alternate%20Icons/MicrochipImage.imageset/macOS-AppIcon-1024px.png`,
+  glass: `${cdnBase}/Alternate%20Icons/GlassImage.imageset/macOS-AppIcon-1024px.png`,
+  holographic: `${cdnBase}/Alternate%20Icons/HolographicImage.imageset/macOS-AppIcon-1024px.png`,
+  paper: `${cdnBase}/Alternate%20Icons/PaperImage.imageset/macOS-AppIcon-1024px.png`,
+  retro: `${cdnBase}/Alternate%20Icons/RetroImage.imageset/macOS-AppIcon-1024px.png`,
+  xray: `${cdnBase}/Alternate%20Icons/XrayImage.imageset/macOS-AppIcon-1024px.png`,
+};
+```
+
+### Custom Style Icons
+
+For `custom-style` mode, the preview composites multiple layers:
+
+```svelte
+<img class="layer frame" src={frameUrl} alt="" />
+<div class="layer tint screen-mask" style:background-color={screenColor}></div>
+<div class="layer tint ghost-mask" style:background-color={ghostColor}></div>
+<img class="layer crt" src={customLayerUrls.crt} alt="" />
+<img class="layer gloss" src={customLayerUrls.gloss} alt="" />
+```
+
+This allows real-time preview of custom ghost and screen colors.
+
+### Frame Options
+
+- **Aluminum** - Brushed metal look
+- **Beige** - Vintage computer aesthetic
+- **Plastic** - Glossy plastic finish
+- **Chrome** - Shiny metallic
+
+### Color Masks
+
+CSS masks are used to colorize specific parts:
+
+```css
+.screen-mask {
+  mask-image: url(".../CustomIconScreenMask.imageset/screen-mask.png");
+  -webkit-mask-image: url(".../CustomIconScreenMask.imageset/screen-mask.png");
+}
+
+.ghost-mask {
+  mask-image: url(".../CustomIconGhost.imageset/ghosty.png");
+  -webkit-mask-image: url(".../CustomIconGhost.imageset/ghosty.png");
+}
+```
+
+## Reactive Updates
+
+All previews use Svelte's reactive system to update instantly:
+
+```typescript
+// Config store (simplified)
+class ConfigStore {
+  background = $state("#282c34");
+  foreground = $state("#ffffff");
+  fontSize = $state(13);
+  fontFamily = $state("monospace");
+  // ... more settings
+}
+
+const config = new ConfigStore();
+export default config;
+```
+
+When any setting changes, all dependent previews re-render:
+
+```svelte
+<script>
+import config from "$lib/stores/config.svelte";
+
+// This automatically re-runs when config.background changes
+const bgColor = $derived(config.background);
+</script>
+
+<div style:background-color={bgColor}>
+  Preview content
+</div>
+```
+
+## Preview Styling
+
+All previews share common styling:
+
+```css
+.preview {
+  background: var(--config-bg);
+  font-family: var(--config-font-family);
+  font-size: var(--config-font-size);
+  color: var(--config-fg);
+  padding: 8px;
+  border-radius: var(--radius-level-3);
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 1px rgba(255, 255, 255, 0.5) inset;
+}
+```
+
+This creates a consistent "mini terminal" appearance across all previews.
+
+## Performance Considerations
+
+Previews are optimized for performance:
+
+- **CSS variables** - Settings are exposed as CSS custom properties, avoiding re-renders
+- **Derived state** - Svelte's `$derived` only recomputes when dependencies change
+- **Debouncing** - Color picker changes are debounced (not shown in excerpts)
+- **Lazy loading** - Icon images load on-demand
+
+## Integration with Settings
+
+Previews are embedded directly in setting panels:
+
+```svelte
+<Group title="Cursor" note="The cursor in this preview blinks...">
+  <CursorPreview />
+  <Separator />
+  <Item name="Cursor color">
+    <Color bind:value={config.cursorColor} />
+  </Item>
+  <Item name="Cursor style">
+    <Dropdown bind:value={config.cursorStyle} options={[...]} />
+  </Item>
+</Group>
+```
+
+This provides immediate visual feedback as users adjust settings.
+
+## Browser Compatibility
+
+<Note>
+Previews require a modern browser with support for:
+- CSS custom properties (variables)
+- CSS masks (for icon preview)
+- `color-mix()` function (optional, for some effects)
+</Note>
+
+All previews gracefully degrade in older browsers:
+- Icons fall back to simple images
+- Colors use solid values instead of transparency
+- Animations are disabled
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Settings Editor" href="/features/settings-editor" icon="sliders">
+    Full visual configuration interface
+  </Card>
+  <Card title="Font Playground" href="/features/font-playground" icon="font">
+    Dedicated font testing environment
+  </Card>
+  <Card title="Color Schemes" href="/features/color-schemes" icon="palette">
+    Browse community color themes
+  </Card>
+</CardGroup>

@@ -1,0 +1,248 @@
+---
+title: Contributing Guidelines
+description: Learn how to contribute to Ghostty Config with bug reports, feature requests, and pull requests.
+---
+
+## Welcome Contributors!
+
+Ghostty Config is an open-source project, and we welcome contributions from the community. Whether you're fixing bugs, adding features, improving documentation, or providing feedback, your help is appreciated!
+
+## Ways to Contribute
+
+### Report Bugs
+
+Found a bug? Please report it on the [GitHub issue tracker](https://github.com/zerebos/ghostty-config/issues).
+
+**When reporting bugs, include:**
+
+- Clear description of the issue
+- Steps to reproduce the problem
+- Expected vs. actual behavior
+- Browser and OS information
+- Screenshots or screen recordings (if applicable)
+- Relevant error messages from the console
+
+### Suggest Features
+
+Have an idea for a new feature? Open an issue on the [GitHub tracker](https://github.com/zerebos/ghostty-config/issues) with the "enhancement" label.
+
+**Feature requests should include:**
+
+- Clear description of the proposed feature
+- Use case and motivation (why it's needed)
+- Potential implementation approach (if you have ideas)
+- Examples from other tools (if relevant)
+
+### Submit Pull Requests
+
+Ready to contribute code? Follow these steps:
+
+<Steps>
+  <Step title="Fork and clone">
+    Fork the repository on GitHub, then clone your fork:
+    
+    ```bash
+    git clone https://github.com/YOUR-USERNAME/ghostty-config.git
+    cd ghostty-config
+    ```
+  </Step>
+
+  <Step title="Set up development environment">
+    Install dependencies and start the dev server:
+    
+    ```bash
+    bun install
+    bun run dev
+    ```
+    
+    See the [Local Setup](/development/local-setup) guide for details.
+  </Step>
+
+  <Step title="Create a feature branch">
+    Create a new branch for your changes:
+    
+    ```bash
+    git checkout -b feature/your-feature-name
+    ```
+    
+    Use descriptive branch names like:
+    - `feature/add-color-palette-import`
+    - `fix/keybind-validation-crash`
+    - `docs/update-readme`
+  </Step>
+
+  <Step title="Make your changes">
+    Make your changes following the project's code style:
+    
+    - Write clear, readable code
+    - Follow existing patterns and conventions
+    - Add comments for complex logic
+    - Update or add tests if applicable
+    - Ensure TypeScript types are correct
+  </Step>
+
+  <Step title="Test your changes">
+    Before committing, run the quality checks:
+    
+    ```bash
+    # Type checking
+    bun run check
+    
+    # Tests
+    bun run test
+    
+    # Linting and formatting
+    bun run format
+    ```
+  </Step>
+
+  <Step title="Commit your changes">
+    Write clear, descriptive commit messages:
+    
+    ```bash
+    git add .
+    git commit -m "Add color palette import feature"
+    ```
+    
+    **Good commit messages:**
+    - "Fix keybind validation crash on empty input"
+    - "Add support for custom font imports"
+    - "Update README with deployment instructions"
+    
+    **Avoid:**
+    - "Fix bug"
+    - "Update code"
+    - "WIP"
+  </Step>
+
+  <Step title="Push and create PR">
+    Push your branch to GitHub:
+    
+    ```bash
+    git push origin feature/your-feature-name
+    ```
+    
+    Then open a Pull Request on GitHub with:
+    - Clear title describing the change
+    - Description of what changed and why
+    - Reference to related issues (if any)
+    - Screenshots/recordings for UI changes
+  </Step>
+</Steps>
+
+## Code Style
+
+### General Guidelines
+
+- Follow TypeScript best practices
+- Use meaningful variable and function names
+- Keep functions small and focused
+- Avoid deeply nested code
+- Write self-documenting code when possible
+
+### Formatting
+
+The project uses **Prettier** and **ESLint** for consistent code formatting:
+
+```bash
+# Auto-format all files
+bun run format
+
+# Check for linting issues
+bun run lint
+```
+
+Configuration is defined in:
+- ESLint: Uses `@zerebos/eslint-config` presets
+- Prettier: Standard Prettier with `prettier-plugin-svelte`
+
+### Svelte Conventions
+
+- Use Svelte 5 runes (`$state`, `$derived`, `$effect`) for reactivity
+- Keep component files focused and under ~300 lines when possible
+- Extract reusable logic into utility functions
+- Use TypeScript for prop types
+
+Example component structure:
+
+```svelte
+<script lang="ts">
+  // Imports
+  import { someStore } from '$lib/stores/config.svelte';
+  
+  // Props
+  interface Props {
+    title: string;
+    value?: number;
+  }
+  
+  let { title, value = 0 }: Props = $props();
+  
+  // State
+  let count = $state(value);
+  
+  // Derived values
+  let doubled = $derived(count * 2);
+  
+  // Functions
+  function increment() {
+    count++;
+  }
+</script>
+
+<!-- Template -->
+<div>
+  <h2>{title}</h2>
+  <button onclick={increment}>{doubled}</button>
+</div>
+
+<!-- Styles -->
+<style>
+  div {
+    padding: 1rem;
+  }
+</style>
+```
+
+## Testing
+
+The project uses **Vitest** for unit testing. Tests are co-located with source files:
+
+```bash
+# Run all tests
+bun run test
+```
+
+Example: `src/lib/utils/keybinds.test.ts` tests `keybinds.ts`
+
+When adding new features:
+- Add tests for utility functions
+- Test edge cases and error conditions
+- Ensure existing tests still pass
+
+## Development Notes
+
+### Project Status
+
+Ghostty Config is in **active development**. Some features are still being built and the API may change. See the [roadmap](https://github.com/zerebos/ghostty-config#roadmap) for planned features.
+
+### Getting Help
+
+If you have questions:
+
+- Check existing [GitHub issues](https://github.com/zerebos/ghostty-config/issues)
+- Open a new discussion issue
+- Review the [project structure](/development/project-structure) documentation
+
+## License
+
+By contributing to Ghostty Config, you agree that your contributions will be licensed under the [Apache-2.0 License](https://github.com/zerebos/ghostty-config/blob/main/LICENSE).
+
+## Recognition
+
+Contributors are recognized in:
+- GitHub's contributor list
+- Pull request acknowledgments
+- Release notes for significant contributions
+
+Thank you for helping make Ghostty Config better!

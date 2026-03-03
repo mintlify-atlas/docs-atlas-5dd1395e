@@ -1,0 +1,568 @@
+---
+title: Previewing Changes
+description: Learn how to use the live preview features in Ghostty Config
+---
+
+Ghostty Config includes multiple live preview components that show exactly how your settings will appear in Ghostty, helping you make informed decisions about your configuration.
+
+## Preview Components Overview
+
+The application includes specialized preview components for different settings:
+
+- **Import/Export Preview** - View your generated config in real-time
+- **Base Color Preview** - See background, foreground, and selection colors
+- **Cursor Preview** - Animated cursor showing style and color
+- **Palette Preview** - Visual grid of all 256 terminal colors
+- **Font Preview** - Interactive font testing playground
+- **App Icon Preview** - macOS app icon customization preview
+
+## Config Preview (Import/Export)
+
+The import/export page shows your configuration as it will appear in your config file:
+
+```typescript
+// From import-export/+page.svelte
+<div class="preview">
+  <div class="row p2"># You can preview the config here</div>
+  <div class="row">&nbsp;</div>
+
+  {#each Object.entries(diff()) as [key, value], i (i)}
+    {#if Array.isArray(value)}
+      {#each value as val, v (v)}
+      <div class="row"><span class="p4">{key}</span> = <span class="p5">{val}</span></div>
+      {/each}
+    {:else}
+      <div class="row"><span class="p4">{key}</span> = <span class="p5">{value}</span></div>
+    {/if}
+  {/each}
+</div>
+```
+
+### Preview Features
+
+<Tabs>
+  <Tab title="Syntax Highlighting">
+    The preview uses your color palette for syntax highlighting:
+    
+    ```css
+    .p2 {color: var(--config-palette-2);} /* Comments in green */
+    .p4 {color: var(--config-palette-4);} /* Keys in blue */
+    .p5 {color: var(--config-palette-5);} /* Values in magenta */
+    ```
+    
+    This shows how your chosen colors will look with actual config syntax.
+  </Tab>
+  
+  <Tab title="Live Updates">
+    The preview updates instantly as you change settings:
+    
+    - Add a keybinding → See it appear in the preview
+    - Change a color → See the updated value
+    - Adjust font size → See the new setting
+  </Tab>
+  
+  <Tab title="Real Terminal Look">
+    The preview uses terminal styling:
+    
+    ```css
+    .preview {
+      background: var(--config-bg);
+      font-family: var(--config-font-family);
+      font-size: var(--config-font-size);
+      color: var(--config-fg);
+    }
+    ```
+    
+    This matches how the config will look when opened in Ghostty.
+  </Tab>
+</Tabs>
+
+<Note>
+  The preview only shows settings that differ from defaults, just like your exported config.
+</Note>
+
+## Base Color Preview
+
+The base colors section includes a preview showing how colors interact:
+
+```typescript
+// From settings.ts
+id: "base",
+name: "Base Colors",
+note: "The preview here shows selected text in the second line of the command output."
+```
+
+The preview demonstrates:
+- Background color behind all text
+- Foreground color for normal text
+- Selection colors highlighting text
+- How colors contrast with each other
+
+### What You See
+
+<Steps>
+  <Step title="Background">
+    The entire preview area uses your background color
+  </Step>
+  
+  <Step title="Text">
+    Normal text appears in your foreground color
+  </Step>
+  
+  <Step title="Selection">
+    Selected text uses selection-background and selection-foreground colors
+  </Step>
+  
+  <Step title="Contrast">
+    Instantly see if your color choices have sufficient contrast
+  </Step>
+</Steps>
+
+## Cursor Preview
+
+The cursor preview shows your cursor style with animation:
+
+```typescript
+// From settings.ts
+id: "cursor",
+name: "Cursor",
+note: "The cursor in this preview blinks on and off at 1 second intervals for emphasis, it may not match what you see in Ghostty!"
+```
+
+### Cursor Styles
+
+The preview shows different cursor styles:
+
+<Tabs>
+  <Tab title="Block">
+    ```typescript
+    {id: "cursorStyle", name: "Cursor style", type: "dropdown", value: "block"}
+    ```
+    
+    Full block covering the entire character cell.
+  </Tab>
+  
+  <Tab title="Bar">
+    ```typescript
+    {id: "cursorStyle", name: "Cursor style", type: "dropdown", value: "bar"}
+    ```
+    
+    Vertical bar at the character position.
+  </Tab>
+  
+  <Tab title="Underline">
+    ```typescript
+    {id: "cursorStyle", name: "Cursor style", type: "dropdown", value: "underline"}
+    ```
+    
+    Horizontal line under the character.
+  </Tab>
+  
+  <Tab title="Hollow Block">
+    ```typescript
+    {id: "cursorStyle", name: "Cursor style", type: "dropdown", value: "block_hollow"}
+    ```
+    
+    Block outline without fill.
+  </Tab>
+</Tabs>
+
+### Preview Customization
+
+The preview reflects your settings:
+- **Cursor Color**: Shows your chosen cursor color
+- **Cursor Opacity**: Displays at your configured opacity
+- **Text Color**: Shows cursorText color under the cursor
+- **Blinking**: Animates if cursor-style-blink is enabled
+
+<Warning>
+  The preview blink rate (1 second) is exaggerated for visibility. Actual blink rate in Ghostty may differ.
+</Warning>
+
+## Palette Preview
+
+The palette section displays all 256 colors in an organized grid:
+
+```typescript
+// From Palette.svelte
+<div class="color-grid">
+  {#each value as _, i (i)}
+    <Color 
+      defaultValue={defaultValue[i]} 
+      bind:value={value[i]} 
+      size={40} 
+      label={(i + 1).toString()} 
+    />
+  {/each}
+</div>
+```
+
+### Grid Layout
+
+<CardGroup cols={2}>
+  <Card title="Colors 0-7" icon="palette">
+    Standard colors in the first row:
+    - Black, Red, Green, Yellow
+    - Blue, Magenta, Cyan, White
+  </Card>
+  
+  <Card title="Colors 8-15" icon="palette">
+    Bright variants in the second row:
+    - Bright Black (Gray), Bright Red, etc.
+  </Card>
+  
+  <Card title="Colors 16-231" icon="palette">
+    216-color cube (6×6×6 RGB):
+    - Organized by hue
+    - Rows progress through saturation and brightness
+  </Card>
+  
+  <Card title="Colors 232-255" icon="palette">
+    Grayscale ramp:
+    - 24 shades from dark to light
+    - Useful for UI elements
+  </Card>
+</CardGroup>
+
+### Interactive Features
+
+<Steps>
+  <Step title="Hover to see index">
+    Hover over any color to see its palette index (1-256)
+  </Step>
+  
+  <Step title="Click to edit">
+    Click a color swatch to open the color picker
+  </Step>
+  
+  <Step title="Visual comparison">
+    Changed colors are highlighted against defaults
+  </Step>
+  
+  <Step title="Real-time updates">
+    Color changes appear immediately in all previews
+  </Step>
+</Steps>
+
+## Font Playground
+
+The font playground provides the most comprehensive preview:
+
+```typescript
+// From FontPreview.svelte
+<div class="preview" style="
+  font-family: {fontFamily}; 
+  font-size: {fontSize + 'px'}; 
+  font-style: {italic ? 'italic' : 'normal'}; 
+  font-weight: {bold ? 700 : 400};
+">
+  <div class="row prompt">
+    <span style="color: var(--config-palette-2);">john</span>
+    <span style="color: var(--config-palette-6);">@</span>
+    <span style="color: var(--config-palette-4);">doe-pc</span>
+    <span style="color: var(--config-palette-1); font-weight: 700;">$</span>
+    ls
+  </div>
+  <div class="row">-rwxr-xr-x 1 root <span style="color: var(--config-palette-3); font-weight: 700;">Documents</span></div>
+</div>
+```
+
+### Test Content
+
+The playground shows diverse content to test font rendering:
+
+<Tabs>
+  <Tab title="Shell Prompt">
+    ```
+    john@doe-pc$ ls
+    ```
+    
+    Tests:
+    - Regular text rendering
+    - Color mixing
+    - Special characters (@, $)
+  </Tab>
+  
+  <Tab title="File Listings">
+    ```
+    -rwxr-xr-x 1 root Documents
+    -rwxr-xr-x 1 root Downloads
+    ```
+    
+    Tests:
+    - Monospace alignment
+    - Bold text (file names)
+    - Character spacing
+  </Tab>
+  
+  <Tab title="Unicode">
+    ```
+    -rwxr-xr-x 1 root 実行可能ファイル
+    ```
+    
+    Tests:
+    - CJK character support
+    - Unicode width handling
+    - Font fallback
+  </Tab>
+  
+  <Tab title="Symbols">
+    ```
+    Icons:  Powerline
+    ```
+    
+    Tests:
+    - Powerline symbols
+    - Icon font support
+    - Special glyphs
+  </Tab>
+  
+  <Tab title="Highlighting">
+    ```
+    -rwxr-xr-x 1 root Downloads
+    ```
+    (With background color)
+    
+    Tests:
+    - Foreground/background combinations
+    - Bold text on colored backgrounds
+    - Contrast and readability
+  </Tab>
+</Tabs>
+
+### Interactive Controls
+
+```typescript
+// From FontPreview.svelte
+<Item name="Font family"><Text bind:value={fontFamily} /></Item>
+<Item name="Font size"><Number bind:value={fontSize} range={true} min={4} max={60} step={0.5} /></Item>
+<Item name="Bold"><Switch bind:checked={bold} /></Item>
+<Item name="Italic"><Switch bind:checked={italic} /></Item>
+```
+
+<Note>
+  The Font Playground is independent of your actual font settings. Use it to experiment, then apply your choices in the Fonts settings page.
+</Note>
+
+## App Icon Preview (macOS)
+
+The macOS settings include a live preview of your custom app icon:
+
+```typescript
+// From settings.ts
+id: "icon",
+name: "App Icon",
+note: "If you choose the \"custom-style\" option, you can use any of the other icon settings to customize your icon with a live preview."
+```
+
+### Icon Customization
+
+The preview shows:
+- **Icon style** (official, blueprint, glass, etc.)
+- **Frame material** (aluminum, beige, plastic, chrome)
+- **Ghost color** (the ghost/character color)
+- **Screen color** (the screen background color)
+
+<Steps>
+  <Step title="Select icon style">
+    Choose from preset styles or "custom-style" for full control
+  </Step>
+  
+  <Step title="Customize colors">
+    If using "custom-style", adjust ghost and screen colors
+  </Step>
+  
+  <Step title="Choose frame">
+    Select frame material for the icon border
+  </Step>
+  
+  <Step title="See preview">
+    The preview updates to show your custom icon design
+  </Step>
+</Steps>
+
+## Preview Update Pattern
+
+All previews use reactive state for instant updates:
+
+```typescript
+// Reactive config values
+const config = $state(Object.assign({}, defaults));
+
+// CSS variables bound to config
+<style>
+  :root {
+    --config-bg: {config.background};
+    --config-fg: {config.foreground};
+    --config-palette-0: {config.palette[0]};
+    /* ... etc */
+  }
+</style>
+
+// Components reference these variables
+.preview {
+  background: var(--config-bg);
+  color: var(--config-fg);
+}
+```
+
+This pattern ensures:
+- **Instant feedback** when changing settings
+- **Consistent appearance** across all previews
+- **Real-time synchronization** between settings and preview
+
+## Preview Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use previews for comparison">
+    Open multiple settings pages in separate tabs to compare different configurations side by side.
+  </Accordion>
+  
+  <Accordion title="Test with real content">
+    The Font Playground is great, but also test your settings in actual Ghostty with your daily workflow.
+  </Accordion>
+  
+  <Accordion title="Check contrast">
+    Use the color previews to ensure sufficient contrast for readability, especially for long coding sessions.
+  </Accordion>
+  
+  <Accordion title="Preview before exporting">
+    Always review the config preview on the Import/Export page before exporting to catch any unexpected changes.
+  </Accordion>
+  
+  <Accordion title="Test edge cases">
+    The Font Playground includes edge cases (CJK text, symbols) to help identify font issues early.
+  </Accordion>
+</AccordionGroup>
+
+## Preview Limitations
+
+<Warning>
+  Preview limitations to be aware of:
+  
+  - **Browser rendering**: Fonts may render slightly differently in the browser than in Ghostty
+  - **Cursor blink**: Preview blink rate doesn't match Ghostty's actual rate
+  - **Font features**: Some advanced font features (ligatures, variations) may not preview accurately
+  - **System integration**: System-specific features (window decorations, blur) don't preview
+  - **Performance**: Very large palette changes may cause preview lag
+</Warning>
+
+## Testing Changes in Ghostty
+
+After using previews, always test in Ghostty:
+
+<Steps>
+  <Step title="Export config">
+    Export your configuration from the Import/Export page
+  </Step>
+  
+  <Step title="Save to file">
+    Save the exported config to `~/.config/ghostty/config`
+  </Step>
+  
+  <Step title="Reload Ghostty">
+    Open a new Ghostty window or reload config (Cmd+Shift+,)
+  </Step>
+  
+  <Step title="Compare with preview">
+    Compare the actual appearance with what you saw in the previews
+  </Step>
+  
+  <Step title="Iterate">
+    Make adjustments if needed and repeat
+  </Step>
+</Steps>
+
+## Preview Performance Tips
+
+<Tabs>
+  <Tab title="Color Changes">
+    Color previews update instantly, but:
+    
+    - Changing many palette colors at once may cause brief lag
+    - Use theme selection for bulk color changes
+    - Individual color tweaks are performant
+  </Tab>
+  
+  <Tab title="Font Changes">
+    Font previews are cached:
+    
+    - First load of a new font may be slow
+    - Subsequent uses are fast
+    - Browser font cache speeds up repeated tests
+  </Tab>
+  
+  <Tab title="Config Preview">
+    The config preview scales well:
+    
+    - Handles hundreds of settings
+    - Array settings (keybinds, palette) are optimized
+    - Scrolling large configs is smooth
+  </Tab>
+</Tabs>
+
+## Advanced Preview Features
+
+### Live CSS Variables
+
+Previews use CSS variables that update reactively:
+
+```typescript
+// CSS variables are set based on config state
+--config-bg: #282c34;
+--config-fg: #ffffff;
+--config-palette-0: #1d1f21;
+--config-palette-1: #cc6666;
+// ... all 256 palette colors
+```
+
+This allows:
+- Preview components to reference colors without prop drilling
+- Instant updates across all components
+- Consistent color representation
+
+### Preview Scroll Sync
+
+Some previews remember scroll position:
+
+```typescript
+// From Keybinds.svelte
+let scroller: HTMLDivElement | undefined = $state();
+let scrollPosition = $state(0);
+
+function onScroll(event: Event) {
+  scrollPosition = (event.target as HTMLDivElement).scrollTop;
+}
+
+$effect(() => {
+  if (!showEditor && scroller) {
+    scroller.scrollTop = scrollPosition;
+  }
+});
+```
+
+This prevents jarring jumps when switching between views.
+
+## Making the Most of Previews
+
+<CardGroup cols={2}>
+  <Card title="Iterate Quickly" icon="rotate">
+    Use previews to quickly test ideas without leaving the browser
+  </Card>
+  
+  <Card title="Compare Options" icon="code-compare">
+    Try multiple fonts or color schemes using the instant previews
+  </Card>
+  
+  <Card title="Catch Issues" icon="bug">
+    Previews help identify problems (low contrast, unreadable fonts) before export
+  </Card>
+  
+  <Card title="Build Confidence" icon="shield-check">
+    See exactly what you're creating before committing to a config
+  </Card>
+</CardGroup>
+
+<Tip>
+  The most effective workflow is to use previews for initial exploration and quick iterations, then test your final configuration in Ghostty for real-world validation.
+</Tip>

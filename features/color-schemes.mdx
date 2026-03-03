@@ -1,0 +1,243 @@
+---
+title: Color Schemes Browser
+description: Browse and apply 250+ community color themes from the iTerm2-Color-Schemes repository
+---
+
+The color schemes browser provides instant access to hundreds of professionally designed terminal color themes from the popular [iTerm2-Color-Schemes](https://github.com/mbadolato/iTerm2-Color-Schemes) repository.
+
+## Overview
+
+Ghostty Config automatically fetches available themes from the mbadolato/iTerm2-Color-Schemes repository on GitHub, which contains over 250 color schemes for terminal emulators.
+
+## How It Works
+
+The theme browser is implemented using the GitHub API:
+
+```typescript
+const fetchThemeFiles = async () => {
+  const response = await fetch(
+    "https://api.github.com/repos/mbadolato/iTerm2-Color-Schemes/contents/ghostty"
+  );
+  if (!response.ok) throw new Error(`Error fetching data: ${response.statusText}`);
+  return await response.json() as ThemeResponse[];
+};
+
+export const fetchColorScheme = async (theme: string) => {
+  const response = await fetch(
+    `https://raw.githubusercontent.com/mbadolato/iTerm2-Color-Schemes/master/ghostty/${theme}`
+  );
+  if (!response.ok) throw new Error(`Error fetching data: ${response.statusText}`);
+  return await response.text();
+};
+```
+
+## Using the Theme Selector
+
+1. Navigate to the **Colors** panel in the settings editor
+2. Find the **Color theme** dropdown in the "General" section
+3. Select any theme from the dropdown
+4. The theme is automatically fetched and applied
+5. Preview updates in real-time
+
+### Theme Component
+
+The theme selector (components/settings/Theme.svelte:1) extends the standard dropdown with automatic color scheme loading:
+
+```typescript
+import {setColorScheme} from "$lib/stores/config.svelte";
+import Dropdown from "./Dropdown.svelte";
+
+let {value = $bindable(), options}: Props = $props();
+
+async function change() {
+  await setColorScheme(value);
+}
+```
+
+## Theme Format
+
+Ghostty theme files use a simple key-value format:
+
+```conf
+# One Dark
+background = #282c34
+foreground = #abb2bf
+
+palette = 0=#5c6370
+palette = 1=#e06c75
+palette = 2=#98c379
+palette = 3=#e5c07b
+palette = 4=#61afef
+palette = 5=#c678dd
+palette = 6=#56b6c2
+palette = 7=#abb2bf
+palette = 8=#686f7a
+palette = 9=#e06c75
+palette = 10=#98c379
+palette = 11=#e5c07b
+palette = 12=#61afef
+palette = 13=#c678dd
+palette = 14=#56b6c2
+palette = 15=#ffffff
+
+cursor-color = #528bff
+selection-background = #3e4451
+selection-foreground = #abb2bf
+```
+
+## Color Scheme Structure
+
+Themes define the following colors:
+
+<CardGroup cols={2}>
+  <Card title="Base Colors" icon="droplet">
+    - `background` - Terminal background
+    - `foreground` - Default text color
+  </Card>
+  <Card title="Palette" icon="swatchbook">
+    - 16 indexed colors (0-15)
+    - First 8 are standard ANSI colors
+    - Last 8 are bright variants
+  </Card>
+  <Card title="Cursor" icon="i-cursor">
+    - `cursor-color` - Cursor fill color
+    - `cursor-text` - Text under cursor
+  </Card>
+  <Card title="Selection" icon="highlighter">
+    - `selection-background` - Selected text background
+    - `selection-foreground` - Selected text color
+  </Card>
+</CardGroup>
+
+## Popular Themes
+
+Some of the most popular themes available:
+
+- **One Dark** - Atom's iconic dark theme
+- **Dracula** - Popular purple-tinted dark theme
+- **Solarized Dark/Light** - Precision colors for reduced eye strain
+- **Gruvbox** - Retro groove color scheme
+- **Nord** - Arctic, north-bluish color palette
+- **Tokyo Night** - Clean dark theme inspired by Tokyo's night
+- **Catppuccin** - Soothing pastel theme
+- **Monokai** - Sublime Text's default theme
+
+## Custom Theme Override
+
+<Note>
+Important: Any colors you manually set **after** selecting a theme will override the theme's colors.
+</Note>
+
+For example:
+
+1. Select "One Dark" theme
+2. Change `cursor-color` to `#ff0000`
+3. Result: One Dark theme with a red cursor
+
+The generated config will include:
+```conf
+theme = One-Dark
+cursor-color = #ff0000
+```
+
+## Theme Loading
+
+Themes are loaded asynchronously when the settings module initializes:
+
+```typescript
+void fetchThemeFiles().then((themeFiles: ThemeResponse[] | null) => {
+  if (!themeFiles) return;
+  const themeNames = themeFiles
+    .map((file: ThemeResponse) => file.name)
+    .sort((a, b) => a.localeCompare(b, undefined, {
+      sensitivity: "base",
+      numeric: true
+    }));
+  const themeSetting = settings
+    .find(p => p.id === "colors")
+    ?.groups.find(g => g.id === "general")
+    ?.settings.find(s => s.type === "theme");
+  themeSetting?.options.push(...themeNames);
+});
+```
+
+This approach:
+- Fetches the theme list once on page load
+- Sorts themes alphabetically with natural number sorting
+- Populates the dropdown dynamically
+- Fetches individual theme contents only when selected
+
+## Creating Custom Themes
+
+To create your own theme:
+
+1. Use the color picker controls in the Colors panel
+2. Set base colors (background, foreground)
+3. Customize the 16-color palette
+4. Set cursor and selection colors
+5. Copy the generated config
+
+### Example Custom Theme
+
+```conf
+# My Custom Theme
+background = #1a1b26
+foreground = #c0caf5
+
+# Standard colors (0-7)
+palette = 0=#15161e
+palette = 1=#f7768e
+palette = 2=#9ece6a
+palette = 3=#e0af68
+palette = 4=#7aa2f7
+palette = 5=#bb9af7
+palette = 6=#7dcfff
+palette = 7=#a9b1d6
+
+# Bright colors (8-15)
+palette = 8=#414868
+palette = 9=#f7768e
+palette = 10=#9ece6a
+palette = 11=#e0af68
+palette = 12=#7aa2f7
+palette = 13=#bb9af7
+palette = 14=#7dcfff
+palette = 15=#c0caf5
+
+cursor-color = #7aa2f7
+selection-background = #33467c
+```
+
+## Palette Generation
+
+Ghostty supports automatic palette generation:
+
+```conf
+palette-generate = true
+palette-harmonious = false
+```
+
+When enabled:
+- **palette-generate** - Automatically generates colors 16-231 based on the first 16
+- **palette-harmonious** - Inverts generated colors for better harmony
+
+<Tip>
+If you only care about the standard 16 ANSI colors, enable `palette-generate` to let Ghostty fill in the extended 256-color palette automatically.
+</Tip>
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Settings Editor" href="/features/settings-editor" icon="sliders">
+    Full visual configuration interface
+  </Card>
+  <Card title="Live Previews" href="/features/live-previews" icon="eye">
+    See color changes in real-time
+  </Card>
+</CardGroup>
+
+## External Resources
+
+- [iTerm2-Color-Schemes Repository](https://github.com/mbadolato/iTerm2-Color-Schemes)
+- [Ghostty Color Configuration Docs](https://ghostty.org/docs/config/reference#colors)
+- [Terminal.sexy](https://terminal.sexy) - Online theme creator

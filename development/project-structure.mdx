@@ -1,0 +1,136 @@
+---
+title: Project Structure
+description: Understand the codebase organization and architecture of Ghostty Config.
+---
+
+## Overview
+
+Ghostty Config is built with **SvelteKit**, using the modern **Svelte 5** framework with runes enabled. The project follows SvelteKit's file-based routing convention and is structured for maintainability and scalability.
+
+## Tech Stack
+
+- **[Bun](https://bun.sh)**: Fast JavaScript runtime and package manager
+- **[Svelte 5](https://svelte.dev)**: Reactive UI framework with runes for state management
+- **[SvelteKit](https://kit.svelte.dev)**: Application framework with file-based routing
+- **[TypeScript](https://www.typescriptlang.org)**: Type-safe JavaScript
+- **[Vite](https://vite.dev)**: Build tool and development server
+- **[Vitest](https://vitest.dev)**: Unit testing framework
+
+## Directory Structure
+
+```
+ghostty-config/
+├── src/
+│   ├── routes/              # SvelteKit file-based routes
+│   ├── lib/                 # Shared library code
+│   │   ├── components/      # Reusable Svelte components
+│   │   ├── stores/          # Svelte 5 state stores (runes)
+│   │   ├── utils/           # Utility functions
+│   │   ├── data/            # Data schemas and settings definitions
+│   │   ├── views/           # Page-level view components
+│   │   ├── images/          # Image assets
+│   │   └── attachments/     # Static attachments
+│   ├── app.html             # HTML template
+│   ├── app.css              # Global styles
+│   └── app.d.ts             # TypeScript declarations
+├── build/                   # Production build output (generated)
+├── package.json             # Dependencies and scripts
+├── svelte.config.js         # SvelteKit configuration
+├── tsconfig.json            # TypeScript configuration
+└── vite.config.js           # Vite configuration
+```
+
+## Core Directories
+
+### `/src/routes/`
+
+SvelteKit uses file-based routing. Each route is defined by the file structure:
+
+- `+page.svelte` - Route component
+- `+page.ts` - Route data loading (optional)
+- `+layout.svelte` - Shared layout wrapper
+- `+layout.ts` - Layout data loading
+
+**Key routes:**
+
+```
+routes/
+├── +layout.svelte           # Root layout for entire app
+├── +layout.ts               # Root layout config (SPA mode)
+├── +page.svelte             # Homepage
+├── settings/
+│   ├── [category]/
+│   │   └── +page.svelte     # Dynamic settings category pages
+│   └── keybinds/
+│       └── +page.svelte     # Keybindings configuration
+└── app/
+    ├── font-playground/
+    │   └── +page.svelte     # Font testing playground
+    └── import-export/
+        └── +page.svelte     # Config import/export tools
+```
+
+### `/src/lib/stores/`
+
+Svelte 5 runes-based state management stores:
+
+- **`config.svelte.ts`** - Main configuration state management
+- **`history.svelte.ts`** - Undo/redo history tracking
+- **`state.svelte.ts`** - Application UI state
+
+### `/src/lib/components/`
+
+Reusable Svelte components, including:
+
+- **`components/settings/`** - Settings-specific components (inputs, controls, previews)
+- Generic UI components (buttons, modals, etc.)
+
+### `/src/lib/utils/`
+
+Utility functions and helpers:
+
+- **`colors.ts`** - Color manipulation utilities
+- **`keybinds.ts`** - Keybinding validation logic
+- **`keybinds.test.ts`** - Keybinding tests
+- **`parse.ts`** - Config file parsing
+
+### `/src/lib/data/`
+
+Data schemas and definitions:
+
+- **`ghostty-schema.ts`** - Ghostty configuration schema definitions
+- **`settings.ts`** - Settings metadata and structure
+
+### `/src/lib/views/`
+
+Page-level view components that compose multiple smaller components into full pages.
+
+## Build Configuration
+
+### `svelte.config.js`
+
+Configures SvelteKit with:
+
+- **Adapter**: `@sveltejs/adapter-static` for static site generation
+- **Preprocessor**: `vitePreprocess()` for TypeScript and PostCSS
+- **Compiler options**: Enables Svelte 5 runes mode
+- **Fallback**: 404.html for client-side routing
+
+### Output
+
+Running `bun run build` generates a static site in the `build/` directory, ready for deployment to any static hosting service (GitHub Pages, Netlify, Vercel, etc.).
+
+## State Management
+
+The app uses **Svelte 5 runes** (`$state`, `$derived`, `$effect`) for reactive state management instead of traditional Svelte stores. This provides better TypeScript support and more granular reactivity.
+
+Example from `src/lib/stores/config.svelte.ts`:
+
+```typescript
+let config = $state({...});
+let isDirty = $derived(/* check if modified */);
+```
+
+## Styling
+
+Global styles are defined in `src/app.css`. Component-specific styles use Svelte's scoped `<style>` blocks. The project uses the Inter variable font from `@fontsource-variable/inter`.

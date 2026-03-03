@@ -1,0 +1,223 @@
+---
+title: Interactive Settings Editor
+description: Visual controls for configuring Ghostty with real-time previews and automatic config generation
+---
+
+The interactive settings editor provides a user-friendly interface for configuring Ghostty without manually editing config files. All changes generate valid Ghostty configuration that can be copied directly into your config file.
+
+## Overview
+
+The settings editor organizes configuration options into logical panels:
+
+<CardGroup cols={2}>
+  <Card title="Application" icon="window-maximize">
+    General app behavior, startup commands, quick terminal, and shell integration
+  </Card>
+  <Card title="Clipboard" icon="clipboard">
+    Clipboard permissions, copy-on-select, and paste protection
+  </Card>
+  <Card title="Window" icon="browser">
+    Window appearance, sizing, padding, decorations, and split behavior
+  </Card>
+  <Card title="Colors" icon="palette">
+    Themes, color palette, cursor colors, and selection colors
+  </Card>
+  <Card title="Fonts" icon="font">
+    Font families, sizes, styles, variations, and advanced cell adjustments
+  </Card>
+  <Card title="Keybinds" icon="keyboard">
+    Custom keybinding editor with validation and duplicate detection
+  </Card>
+  <Card title="Mouse" icon="mouse-pointer">
+    Mouse reporting, scroll multiplier, click actions, and focus behavior
+  </Card>
+  <Card title="GTK" icon="linux">
+    GTK-specific settings for Linux (titlebar, tabs, CSS)
+  </Card>
+  <Card title="macOS" icon="apple">
+    macOS-specific settings (fullscreen, titlebar, icon, auto-update)
+  </Card>
+  <Card title="Linux" icon="server">
+    Linux-specific settings (async backend, cgroups)
+  </Card>
+</CardGroup>
+
+## Setting Types
+
+The editor provides different control types based on the setting:
+
+### Switch
+Boolean settings with toggle controls:
+```conf
+window-vsync = true
+clipboard-trim-trailing-spaces = false
+```
+
+### Text Input
+Free-form text for paths, commands, and string values:
+```conf
+title = My Terminal
+font-family = JetBrains Mono
+config-file = ~/.config/ghostty/custom
+```
+
+### Number
+Numeric settings with sliders or input fields:
+```conf
+font-size = 13
+background-opacity = 0.95
+scrollback-limit = 10000000
+```
+
+### Dropdown
+Predefined options for enumerated values:
+```conf
+cursor-style = block
+window-theme = auto
+shell-integration = detect
+```
+
+### Color Picker
+Visual color selection with hex output:
+```conf
+background = #282c34
+foreground = #ffffff
+cursor-color = #528bff
+```
+
+### Theme Browser
+Special dropdown that loads community themes from the [iTerm2-Color-Schemes](https://github.com/mbadolato/iTerm2-Color-Schemes) repository. Selecting a theme automatically fetches and applies the full color scheme.
+
+## Groups and Organization
+
+Settings are organized into collapsible groups within each panel:
+
+```typescript
+interface Panel {
+  id: string;
+  name: string;
+  groups: Group[];
+}
+
+interface Group {
+  id: string;
+  name: string;
+  note?: string;  // Additional context for the group
+  settings: Setting[];
+}
+```
+
+Each group can include a `note` field that provides context about the settings it contains. For example, the "Advanced" group warns:
+
+> You should only touch these settings if you know what you're doing, otherwise you could cause major issues with Ghostty!
+
+## Real-Time Previews
+
+Many panels include live preview components that update as you change settings:
+
+- **Cursor preview** (colors/cursor/56:1) - Shows cursor style, color, opacity, and blink behavior
+- **Font preview** (fonts/76:1) - Displays sample text with current font settings
+- **Color preview** (colors/base/344:1) - Terminal output with selection highlighting
+- **App icon preview** (macos/icon/167:1) - Shows macOS app icon with custom colors
+
+## Configuration Export
+
+The editor generates a complete Ghostty config file that you can:
+
+1. **Copy to clipboard** - One-click copy of all settings
+2. **Download as file** - Save as `config` file
+3. **View diff** - See only changed settings
+
+### Example Generated Output
+
+```conf
+# Application
+title = My Custom Terminal
+desktop-notifications = true
+config-default-files = true
+
+# Window
+window-theme = ghostty
+window-padding-x = 4
+window-padding-y = 4
+background-opacity = 0.95
+
+# Colors
+background = #1e1e2e
+foreground = #cdd6f4
+selection-background = #585b70
+selection-foreground = #cdd6f4
+
+# Fonts
+font-family = JetBrains Mono
+font-size = 14
+font-thicken = true
+
+# Keybinds
+keybind = super+t=new_tab
+keybind = super+w=close_surface
+keybind = super+enter=toggle_fullscreen
+```
+
+## Settings Structure
+
+The settings are defined in `src/lib/data/settings.ts` as a typed array of panels:
+
+```typescript
+const settings = [
+  {
+    id: "application",
+    name: "Application",
+    groups: [
+      {
+        id: "general",
+        name: "",
+        settings: [
+          {
+            id: "title",
+            name: "Static title for all windows",
+            type: "text",
+            value: ""
+          },
+          {
+            id: "desktopNotifications",
+            name: "Allow desktop notifications",
+            type: "switch",
+            value: true
+          }
+        ]
+      }
+    ]
+  }
+] as Panel[];
+```
+
+## Validation and Defaults
+
+The editor provides:
+
+- **Type validation** - Ensures correct value types (numbers, booleans, strings)
+- **Range validation** - Enforces min/max values for numeric settings
+- **Default values** - Easy reset to Ghostty defaults
+- **Help text** - Contextual notes for complex settings
+
+<Note>
+Changing settings in the web UI does not modify your actual Ghostty configuration. You must copy the generated config to your Ghostty config file (`~/.config/ghostty/config` on Linux/macOS).
+</Note>
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Color Schemes" href="/features/color-schemes" icon="palette">
+    Browse and preview community color themes
+  </Card>
+  <Card title="Font Playground" href="/features/font-playground" icon="font">
+    Test fonts with live preview
+  </Card>
+  <Card title="Keybind Builder" href="/features/keybind-builder" icon="keyboard">
+    Visual keybinding editor with validation
+  </Card>
+  <Card title="Live Previews" href="/features/live-previews" icon="eye">
+    Real-time preview components
+  </Card>
+</CardGroup>
